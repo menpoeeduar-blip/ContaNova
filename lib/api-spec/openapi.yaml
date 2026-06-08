@@ -3,20 +3,39 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: ContaNova ERP API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Dashboard & KPIs
+  - name: clientes
+    description: Clientes
+  - name: proveedores
+    description: Proveedores
+  - name: productos
+    description: Productos e inventario
+  - name: facturas
+    description: Facturas de venta
+  - name: compras
+    description: Ordenes y facturas de compra
+  - name: cartera
+    description: Cuentas por cobrar y pagar
+  - name: cuentas
+    description: Plan de cuentas contables
+  - name: movimientos
+    description: Movimientos contables / comprobantes
+  - name: crm
+    description: CRM y oportunidades
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +43,1972 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── DASHBOARD ───────────────────────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: KPIs ejecutivos del dashboard
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/ventas-mensuales:
+    get:
+      operationId: getVentasMensuales
+      tags: [dashboard]
+      summary: Ventas por mes (últimos 12 meses)
+      responses:
+        "200":
+          description: Ventas mensuales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VentaMensual"
+
+  /dashboard/top-productos:
+    get:
+      operationId: getTopProductos
+      tags: [dashboard]
+      summary: Productos más vendidos
+      responses:
+        "200":
+          description: Top productos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TopProducto"
+
+  /dashboard/actividad-reciente:
+    get:
+      operationId: getActividadReciente
+      tags: [dashboard]
+      summary: Actividad reciente del sistema
+      responses:
+        "200":
+          description: Actividad reciente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActividadItem"
+
+  /dashboard/flujo-caja:
+    get:
+      operationId: getFlujoCaja
+      tags: [dashboard]
+      summary: Flujo de caja (últimos 30 días)
+      responses:
+        "200":
+          description: Flujo de caja
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FlujoCajaItem"
+
+  # ─── CLIENTES ────────────────────────────────────────────────────────────────
+  /clientes:
+    get:
+      operationId: listClientes
+      tags: [clientes]
+      summary: Listar clientes
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: activo
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Lista de clientes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cliente"
+    post:
+      operationId: createCliente
+      tags: [clientes]
+      summary: Crear cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClienteInput"
+      responses:
+        "201":
+          description: Cliente creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cliente"
+
+  /clientes/{id}:
+    get:
+      operationId: getCliente
+      tags: [clientes]
+      summary: Obtener cliente por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Cliente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cliente"
+        "404":
+          description: No encontrado
+    patch:
+      operationId: updateCliente
+      tags: [clientes]
+      summary: Actualizar cliente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClienteUpdate"
+      responses:
+        "200":
+          description: Cliente actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cliente"
+    delete:
+      operationId: deleteCliente
+      tags: [clientes]
+      summary: Eliminar cliente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Eliminado
+
+  /clientes/{id}/resumen:
+    get:
+      operationId: getClienteResumen
+      tags: [clientes]
+      summary: Resumen de cuenta del cliente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Resumen del cliente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClienteResumen"
+
+  # ─── PROVEEDORES ─────────────────────────────────────────────────────────────
+  /proveedores:
+    get:
+      operationId: listProveedores
+      tags: [proveedores]
+      summary: Listar proveedores
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de proveedores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Proveedor"
+    post:
+      operationId: createProveedor
+      tags: [proveedores]
+      summary: Crear proveedor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProveedorInput"
+      responses:
+        "201":
+          description: Proveedor creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proveedor"
+
+  /proveedores/{id}:
+    get:
+      operationId: getProveedor
+      tags: [proveedores]
+      summary: Obtener proveedor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Proveedor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proveedor"
+    patch:
+      operationId: updateProveedor
+      tags: [proveedores]
+      summary: Actualizar proveedor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProveedorUpdate"
+      responses:
+        "200":
+          description: Proveedor actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proveedor"
+    delete:
+      operationId: deleteProveedor
+      tags: [proveedores]
+      summary: Eliminar proveedor
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Eliminado
+
+  # ─── PRODUCTOS ───────────────────────────────────────────────────────────────
+  /productos:
+    get:
+      operationId: listProductos
+      tags: [productos]
+      summary: Listar productos
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: categoria
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de productos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Producto"
+    post:
+      operationId: createProducto
+      tags: [productos]
+      summary: Crear producto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductoInput"
+      responses:
+        "201":
+          description: Producto creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Producto"
+
+  /productos/{id}:
+    get:
+      operationId: getProducto
+      tags: [productos]
+      summary: Obtener producto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Producto
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Producto"
+    patch:
+      operationId: updateProducto
+      tags: [productos]
+      summary: Actualizar producto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductoUpdate"
+      responses:
+        "200":
+          description: Producto actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Producto"
+    delete:
+      operationId: deleteProducto
+      tags: [productos]
+      summary: Eliminar producto
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Eliminado
+
+  /productos/stats/inventario:
+    get:
+      operationId: getInventarioStats
+      tags: [productos]
+      summary: Estadisticas de inventario (bajo stock, total valor)
+      responses:
+        "200":
+          description: Stats inventario
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventarioStats"
+
+  # ─── FACTURAS ────────────────────────────────────────────────────────────────
+  /facturas:
+    get:
+      operationId: listFacturas
+      tags: [facturas]
+      summary: Listar facturas de venta
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [borrador, emitida, pagada, anulada]
+        - name: clienteId
+          in: query
+          schema:
+            type: integer
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista de facturas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Factura"
+    post:
+      operationId: createFactura
+      tags: [facturas]
+      summary: Crear factura
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FacturaInput"
+      responses:
+        "201":
+          description: Factura creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Factura"
+
+  /facturas/{id}:
+    get:
+      operationId: getFactura
+      tags: [facturas]
+      summary: Obtener factura
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Factura con items
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacturaDetalle"
+    patch:
+      operationId: updateFactura
+      tags: [facturas]
+      summary: Actualizar factura
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FacturaUpdate"
+      responses:
+        "200":
+          description: Factura actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Factura"
+    delete:
+      operationId: deleteFactura
+      tags: [facturas]
+      summary: Anular/eliminar factura
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Eliminado
+
+  /facturas/stats/resumen:
+    get:
+      operationId: getFacturasResumen
+      tags: [facturas]
+      summary: Resumen de facturas (totales por estado)
+      responses:
+        "200":
+          description: Resumen facturas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FacturasResumen"
+
+  # ─── COMPRAS ─────────────────────────────────────────────────────────────────
+  /compras:
+    get:
+      operationId: listCompras
+      tags: [compras]
+      summary: Listar órdenes y facturas de compra
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [pendiente, recibida, pagada, anulada]
+        - name: proveedorId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lista de compras
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Compra"
+    post:
+      operationId: createCompra
+      tags: [compras]
+      summary: Crear orden/factura de compra
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompraInput"
+      responses:
+        "201":
+          description: Compra creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Compra"
+
+  /compras/{id}:
+    get:
+      operationId: getCompra
+      tags: [compras]
+      summary: Obtener compra
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Compra con detalle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompraDetalle"
+    patch:
+      operationId: updateCompra
+      tags: [compras]
+      summary: Actualizar compra
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompraUpdate"
+      responses:
+        "200":
+          description: Compra actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Compra"
+    delete:
+      operationId: deleteCompra
+      tags: [compras]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Eliminado
+
+  # ─── CARTERA ─────────────────────────────────────────────────────────────────
+  /cartera/cuentas-cobrar:
+    get:
+      operationId: listCuentasCobrar
+      tags: [cartera]
+      summary: Cuentas por cobrar pendientes
+      parameters:
+        - name: vencidas
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Cuentas por cobrar
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CuentaCobrar"
+
+  /cartera/cuentas-pagar:
+    get:
+      operationId: listCuentasPagar
+      tags: [cartera]
+      summary: Cuentas por pagar pendientes
+      parameters:
+        - name: vencidas
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Cuentas por pagar
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CuentaPagar"
+
+  /cartera/stats:
+    get:
+      operationId: getCarteraStats
+      tags: [cartera]
+      summary: Resumen de cartera (total por cobrar/pagar, vencidos)
+      responses:
+        "200":
+          description: Stats de cartera
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CarteraStats"
+
+  /cartera/abonos:
+    post:
+      operationId: createAbono
+      tags: [cartera]
+      summary: Registrar abono a factura
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AbonoInput"
+      responses:
+        "201":
+          description: Abono registrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Abono"
+
+  # ─── PLAN DE CUENTAS ─────────────────────────────────────────────────────────
+  /cuentas:
+    get:
+      operationId: listCuentas
+      tags: [cuentas]
+      summary: Listar plan de cuentas
+      parameters:
+        - name: tipo
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Plan de cuentas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CuentaContable"
+    post:
+      operationId: createCuenta
+      tags: [cuentas]
+      summary: Crear cuenta contable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CuentaContableInput"
+      responses:
+        "201":
+          description: Cuenta creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CuentaContable"
+
+  /cuentas/{id}:
+    patch:
+      operationId: updateCuenta
+      tags: [cuentas]
+      summary: Actualizar cuenta contable
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CuentaContableUpdate"
+      responses:
+        "200":
+          description: Cuenta actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CuentaContable"
+    delete:
+      operationId: deleteCuenta
+      tags: [cuentas]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Eliminado
+
+  # ─── MOVIMIENTOS CONTABLES ────────────────────────────────────────────────────
+  /movimientos:
+    get:
+      operationId: listMovimientos
+      tags: [movimientos]
+      summary: Listar comprobantes contables
+      parameters:
+        - name: tipo
+          in: query
+          schema:
+            type: string
+        - name: fechaDesde
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: fechaHasta
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Lista de movimientos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Movimiento"
+    post:
+      operationId: createMovimiento
+      tags: [movimientos]
+      summary: Crear comprobante contable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovimientoInput"
+      responses:
+        "201":
+          description: Movimiento creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Movimiento"
+
+  /movimientos/{id}:
+    get:
+      operationId: getMovimiento
+      tags: [movimientos]
+      summary: Obtener movimiento contable
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Movimiento
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Movimiento"
+    delete:
+      operationId: deleteMovimiento
+      tags: [movimientos]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Eliminado
+
+  # ─── CRM ─────────────────────────────────────────────────────────────────────
+  /crm/oportunidades:
+    get:
+      operationId: listOportunidades
+      tags: [crm]
+      summary: Listar oportunidades CRM
+      parameters:
+        - name: etapa
+          in: query
+          schema:
+            type: string
+            enum: [prospecto, calificado, propuesta, negociacion, ganado, perdido]
+      responses:
+        "200":
+          description: Lista de oportunidades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Oportunidad"
+    post:
+      operationId: createOportunidad
+      tags: [crm]
+      summary: Crear oportunidad
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OportunidadInput"
+      responses:
+        "201":
+          description: Oportunidad creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Oportunidad"
+
+  /crm/oportunidades/{id}:
+    patch:
+      operationId: updateOportunidad
+      tags: [crm]
+      summary: Actualizar oportunidad
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OportunidadUpdate"
+      responses:
+        "200":
+          description: Oportunidad actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Oportunidad"
+    delete:
+      operationId: deleteOportunidad
+      tags: [crm]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Eliminado
+
+  /crm/stats:
+    get:
+      operationId: getCrmStats
+      tags: [crm]
+      summary: Estadisticas CRM (pipeline, conversion, valor total)
+      responses:
+        "200":
+          description: Stats CRM
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CrmStats"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    # ─── DASHBOARD ───────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      required:
+        - ventasHoy
+        - ventasMes
+        - utilidadMes
+        - totalClientes
+        - totalProductos
+        - facturasPendientes
+        - cuentasPorCobrar
+        - cuentasPorPagar
+        - oportunidadesAbiertas
+      properties:
+        ventasHoy:
+          type: number
+        ventasMes:
+          type: number
+        utilidadMes:
+          type: number
+        totalClientes:
+          type: integer
+        totalProductos:
+          type: integer
+        facturasPendientes:
+          type: integer
+        cuentasPorCobrar:
+          type: number
+        cuentasPorPagar:
+          type: number
+        oportunidadesAbiertas:
+          type: integer
+        variacionVentasMes:
+          type: ["number", "null"]
+
+    VentaMensual:
+      type: object
+      required: [mes, total, cantidad]
+      properties:
+        mes:
+          type: string
+        total:
+          type: number
+        cantidad:
+          type: integer
+
+    TopProducto:
+      type: object
+      required: [productoId, nombre, cantidadVendida, totalVentas]
+      properties:
+        productoId:
+          type: integer
+        nombre:
+          type: string
+        cantidadVendida:
+          type: number
+        totalVentas:
+          type: number
+
+    ActividadItem:
+      type: object
+      required: [id, tipo, descripcion, fecha]
+      properties:
+        id:
+          type: integer
+        tipo:
+          type: string
+        descripcion:
+          type: string
+        fecha:
+          type: string
+        monto:
+          type: ["number", "null"]
+
+    FlujoCajaItem:
+      type: object
+      required: [fecha, ingresos, egresos, saldo]
+      properties:
+        fecha:
+          type: string
+        ingresos:
+          type: number
+        egresos:
+          type: number
+        saldo:
+          type: number
+
+    # ─── CLIENTES ─────────────────────────────────────────────────────────────
+    Cliente:
+      type: object
+      required:
+        - id
+        - nombre
+        - tipoDocumento
+        - numeroDocumento
+        - activo
+        - createdAt
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        tipoDocumento:
+          type: string
+        numeroDocumento:
+          type: string
+        email:
+          type: ["string", "null"]
+        telefono:
+          type: ["string", "null"]
+        direccion:
+          type: ["string", "null"]
+        ciudad:
+          type: ["string", "null"]
+        activo:
+          type: boolean
+        saldoPendiente:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+
+    ClienteInput:
+      type: object
+      required: [nombre, tipoDocumento, numeroDocumento]
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+        tipoDocumento:
+          type: string
+        numeroDocumento:
+          type: string
+        email:
+          type: string
+        telefono:
+          type: string
+        direccion:
+          type: string
+        ciudad:
+          type: string
+
+    ClienteUpdate:
+      type: object
+      properties:
+        nombre:
+          type: string
+        tipoDocumento:
+          type: string
+        numeroDocumento:
+          type: string
+        email:
+          type: string
+        telefono:
+          type: string
+        direccion:
+          type: string
+        ciudad:
+          type: string
+        activo:
+          type: boolean
+
+    ClienteResumen:
+      type: object
+      required:
+        - clienteId
+        - totalFacturado
+        - totalPagado
+        - saldoPendiente
+        - cantidadFacturas
+      properties:
+        clienteId:
+          type: integer
+        totalFacturado:
+          type: number
+        totalPagado:
+          type: number
+        saldoPendiente:
+          type: number
+        cantidadFacturas:
+          type: integer
+        ultimaCompra:
+          type: ["string", "null"]
+
+    # ─── PROVEEDORES ──────────────────────────────────────────────────────────
+    Proveedor:
+      type: object
+      required:
+        - id
+        - nombre
+        - tipoDocumento
+        - numeroDocumento
+        - activo
+        - createdAt
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        tipoDocumento:
+          type: string
+        numeroDocumento:
+          type: string
+        email:
+          type: ["string", "null"]
+        telefono:
+          type: ["string", "null"]
+        direccion:
+          type: ["string", "null"]
+        ciudad:
+          type: ["string", "null"]
+        activo:
+          type: boolean
+        createdAt:
+          type: string
+
+    ProveedorInput:
+      type: object
+      required: [nombre, tipoDocumento, numeroDocumento]
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+        tipoDocumento:
+          type: string
+        numeroDocumento:
+          type: string
+        email:
+          type: string
+        telefono:
+          type: string
+        direccion:
+          type: string
+        ciudad:
+          type: string
+
+    ProveedorUpdate:
+      type: object
+      properties:
+        nombre:
+          type: string
+        tipoDocumento:
+          type: string
+        numeroDocumento:
+          type: string
+        email:
+          type: string
+        telefono:
+          type: string
+        direccion:
+          type: string
+        ciudad:
+          type: string
+        activo:
+          type: boolean
+
+    # ─── PRODUCTOS ────────────────────────────────────────────────────────────
+    Producto:
+      type: object
+      required:
+        - id
+        - codigo
+        - nombre
+        - precioVenta
+        - stock
+        - activo
+        - createdAt
+      properties:
+        id:
+          type: integer
+        codigo:
+          type: string
+        nombre:
+          type: string
+        descripcion:
+          type: ["string", "null"]
+        categoria:
+          type: ["string", "null"]
+        unidad:
+          type: string
+        precioVenta:
+          type: number
+        precioCosto:
+          type: ["number", "null"]
+        stock:
+          type: number
+        stockMinimo:
+          type: ["number", "null"]
+        activo:
+          type: boolean
+        createdAt:
+          type: string
+
+    ProductoInput:
+      type: object
+      required: [codigo, nombre, precioVenta, unidad]
+      properties:
+        codigo:
+          type: string
+          minLength: 1
+        nombre:
+          type: string
+          minLength: 1
+        descripcion:
+          type: string
+        categoria:
+          type: string
+        unidad:
+          type: string
+        precioVenta:
+          type: number
+        precioCosto:
+          type: number
+        stock:
+          type: number
+        stockMinimo:
+          type: number
+
+    ProductoUpdate:
+      type: object
+      properties:
+        codigo:
+          type: string
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        categoria:
+          type: string
+        unidad:
+          type: string
+        precioVenta:
+          type: number
+        precioCosto:
+          type: number
+        stock:
+          type: number
+        stockMinimo:
+          type: number
+        activo:
+          type: boolean
+
+    InventarioStats:
+      type: object
+      required:
+        - totalProductos
+        - productosBajoStock
+        - valorInventario
+        - categorias
+      properties:
+        totalProductos:
+          type: integer
+        productosBajoStock:
+          type: integer
+        valorInventario:
+          type: number
+        categorias:
+          type: integer
+
+    # ─── FACTURAS ─────────────────────────────────────────────────────────────
+    FacturaItem:
+      type: object
+      required: [id, productoId, descripcion, cantidad, precioUnitario, subtotal]
+      properties:
+        id:
+          type: integer
+        productoId:
+          type: ["integer", "null"]
+        descripcion:
+          type: string
+        cantidad:
+          type: number
+        precioUnitario:
+          type: number
+        descuento:
+          type: ["number", "null"]
+        subtotal:
+          type: number
+
+    FacturaItemInput:
+      type: object
+      required: [descripcion, cantidad, precioUnitario]
+      properties:
+        productoId:
+          type: integer
+        descripcion:
+          type: string
+        cantidad:
+          type: number
+        precioUnitario:
+          type: number
+        descuento:
+          type: number
+
+    Factura:
+      type: object
+      required:
+        - id
+        - numero
+        - clienteId
+        - clienteNombre
+        - fecha
+        - fechaVencimiento
+        - subtotal
+        - impuesto
+        - total
+        - estado
+        - createdAt
+      properties:
+        id:
+          type: integer
+        numero:
+          type: string
+        clienteId:
+          type: integer
+        clienteNombre:
+          type: string
+        fecha:
+          type: string
+        fechaVencimiento:
+          type: string
+        subtotal:
+          type: number
+        descuento:
+          type: ["number", "null"]
+        impuesto:
+          type: number
+        total:
+          type: number
+        saldoPendiente:
+          type: ["number", "null"]
+        estado:
+          type: string
+          enum: [borrador, emitida, pagada, anulada]
+        notas:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    FacturaDetalle:
+      type: object
+      required:
+        - id
+        - numero
+        - clienteId
+        - clienteNombre
+        - fecha
+        - fechaVencimiento
+        - subtotal
+        - impuesto
+        - total
+        - estado
+        - items
+        - createdAt
+      properties:
+        id:
+          type: integer
+        numero:
+          type: string
+        clienteId:
+          type: integer
+        clienteNombre:
+          type: string
+        fecha:
+          type: string
+        fechaVencimiento:
+          type: string
+        subtotal:
+          type: number
+        descuento:
+          type: ["number", "null"]
+        impuesto:
+          type: number
+        total:
+          type: number
+        saldoPendiente:
+          type: ["number", "null"]
+        estado:
+          type: string
+          enum: [borrador, emitida, pagada, anulada]
+        notas:
+          type: ["string", "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FacturaItem"
+        createdAt:
+          type: string
+
+    FacturaInput:
+      type: object
+      required: [clienteId, fecha, fechaVencimiento, items]
+      properties:
+        clienteId:
+          type: integer
+        fecha:
+          type: string
+          format: date
+        fechaVencimiento:
+          type: string
+          format: date
+        descuento:
+          type: number
+        notas:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/FacturaItemInput"
+
+    FacturaUpdate:
+      type: object
+      properties:
+        fecha:
+          type: string
+        fechaVencimiento:
+          type: string
+        estado:
+          type: string
+          enum: [borrador, emitida, pagada, anulada]
+        notas:
+          type: string
+
+    FacturasResumen:
+      type: object
+      required:
+        - totalBorrador
+        - totalEmitidas
+        - totalPagadas
+        - totalAnuladas
+        - montoPendiente
+        - montoMes
+      properties:
+        totalBorrador:
+          type: integer
+        totalEmitidas:
+          type: integer
+        totalPagadas:
+          type: integer
+        totalAnuladas:
+          type: integer
+        montoPendiente:
+          type: number
+        montoMes:
+          type: number
+
+    # ─── COMPRAS ──────────────────────────────────────────────────────────────
+    CompraItem:
+      type: object
+      required: [id, productoId, descripcion, cantidad, precioUnitario, subtotal]
+      properties:
+        id:
+          type: integer
+        productoId:
+          type: ["integer", "null"]
+        descripcion:
+          type: string
+        cantidad:
+          type: number
+        precioUnitario:
+          type: number
+        subtotal:
+          type: number
+
+    CompraItemInput:
+      type: object
+      required: [descripcion, cantidad, precioUnitario]
+      properties:
+        productoId:
+          type: integer
+        descripcion:
+          type: string
+        cantidad:
+          type: number
+        precioUnitario:
+          type: number
+
+    Compra:
+      type: object
+      required:
+        - id
+        - numero
+        - proveedorId
+        - proveedorNombre
+        - fecha
+        - total
+        - estado
+        - createdAt
+      properties:
+        id:
+          type: integer
+        numero:
+          type: string
+        proveedorId:
+          type: integer
+        proveedorNombre:
+          type: string
+        fecha:
+          type: string
+        fechaVencimiento:
+          type: ["string", "null"]
+        subtotal:
+          type: number
+        impuesto:
+          type: number
+        total:
+          type: number
+        estado:
+          type: string
+          enum: [pendiente, recibida, pagada, anulada]
+        notas:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    CompraDetalle:
+      type: object
+      required:
+        - id
+        - numero
+        - proveedorId
+        - proveedorNombre
+        - fecha
+        - total
+        - estado
+        - items
+        - createdAt
+      properties:
+        id:
+          type: integer
+        numero:
+          type: string
+        proveedorId:
+          type: integer
+        proveedorNombre:
+          type: string
+        fecha:
+          type: string
+        fechaVencimiento:
+          type: ["string", "null"]
+        subtotal:
+          type: number
+        impuesto:
+          type: number
+        total:
+          type: number
+        estado:
+          type: string
+          enum: [pendiente, recibida, pagada, anulada]
+        notas:
+          type: ["string", "null"]
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CompraItem"
+        createdAt:
+          type: string
+
+    CompraInput:
+      type: object
+      required: [proveedorId, fecha, items]
+      properties:
+        proveedorId:
+          type: integer
+        fecha:
+          type: string
+          format: date
+        fechaVencimiento:
+          type: string
+          format: date
+        notas:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CompraItemInput"
+
+    CompraUpdate:
+      type: object
+      properties:
+        fecha:
+          type: string
+        fechaVencimiento:
+          type: string
+        estado:
+          type: string
+          enum: [pendiente, recibida, pagada, anulada]
+        notas:
+          type: string
+
+    # ─── CARTERA ──────────────────────────────────────────────────────────────
+    CuentaCobrar:
+      type: object
+      required:
+        - facturaId
+        - numero
+        - clienteNombre
+        - fechaVencimiento
+        - total
+        - saldoPendiente
+        - diasVencida
+      properties:
+        facturaId:
+          type: integer
+        numero:
+          type: string
+        clienteNombre:
+          type: string
+        fechaVencimiento:
+          type: string
+        total:
+          type: number
+        saldoPendiente:
+          type: number
+        diasVencida:
+          type: integer
+
+    CuentaPagar:
+      type: object
+      required:
+        - compraId
+        - numero
+        - proveedorNombre
+        - fechaVencimiento
+        - total
+        - saldoPendiente
+        - diasVencida
+      properties:
+        compraId:
+          type: integer
+        numero:
+          type: string
+        proveedorNombre:
+          type: string
+        fechaVencimiento:
+          type: string
+        total:
+          type: number
+        saldoPendiente:
+          type: number
+        diasVencida:
+          type: integer
+
+    CarteraStats:
+      type: object
+      required:
+        - totalPorCobrar
+        - totalPorPagar
+        - vencidasPorCobrar
+        - vencidasPorPagar
+        - cantidadPorCobrar
+        - cantidadPorPagar
+      properties:
+        totalPorCobrar:
+          type: number
+        totalPorPagar:
+          type: number
+        vencidasPorCobrar:
+          type: number
+        vencidasPorPagar:
+          type: number
+        cantidadPorCobrar:
+          type: integer
+        cantidadPorPagar:
+          type: integer
+
+    AbonoInput:
+      type: object
+      required: [facturaId, monto, fecha]
+      properties:
+        facturaId:
+          type: integer
+        monto:
+          type: number
+        fecha:
+          type: string
+          format: date
+        descripcion:
+          type: string
+
+    Abono:
+      type: object
+      required: [id, facturaId, monto, fecha, createdAt]
+      properties:
+        id:
+          type: integer
+        facturaId:
+          type: integer
+        monto:
+          type: number
+        fecha:
+          type: string
+        descripcion:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    # ─── CUENTAS CONTABLES ────────────────────────────────────────────────────
+    CuentaContable:
+      type: object
+      required: [id, codigo, nombre, tipo, activo]
+      properties:
+        id:
+          type: integer
+        codigo:
+          type: string
+        nombre:
+          type: string
+        tipo:
+          type: string
+          enum: [activo, pasivo, patrimonio, ingreso, egreso]
+        descripcion:
+          type: ["string", "null"]
+        cuentaPadreId:
+          type: ["integer", "null"]
+        activo:
+          type: boolean
+        saldo:
+          type: ["number", "null"]
+
+    CuentaContableInput:
+      type: object
+      required: [codigo, nombre, tipo]
+      properties:
+        codigo:
+          type: string
+          minLength: 1
+        nombre:
+          type: string
+          minLength: 1
+        tipo:
+          type: string
+          enum: [activo, pasivo, patrimonio, ingreso, egreso]
+        descripcion:
+          type: string
+        cuentaPadreId:
+          type: integer
+
+    CuentaContableUpdate:
+      type: object
+      properties:
+        codigo:
+          type: string
+        nombre:
+          type: string
+        tipo:
+          type: string
+          enum: [activo, pasivo, patrimonio, ingreso, egreso]
+        descripcion:
+          type: string
+        activo:
+          type: boolean
+
+    # ─── MOVIMIENTOS CONTABLES ────────────────────────────────────────────────
+    MovimientoLinea:
+      type: object
+      required: [cuentaId, cuentaCodigo, cuentaNombre, debito, credito]
+      properties:
+        cuentaId:
+          type: integer
+        cuentaCodigo:
+          type: string
+        cuentaNombre:
+          type: string
+        debito:
+          type: number
+        credito:
+          type: number
+        descripcion:
+          type: ["string", "null"]
+
+    MovimientoLineaInput:
+      type: object
+      required: [cuentaId, debito, credito]
+      properties:
+        cuentaId:
+          type: integer
+        debito:
+          type: number
+        credito:
+          type: number
+        descripcion:
+          type: string
+
+    Movimiento:
+      type: object
+      required: [id, numero, tipo, fecha, descripcion, totalDebito, totalCredito, createdAt]
+      properties:
+        id:
+          type: integer
+        numero:
+          type: string
+        tipo:
+          type: string
+        fecha:
+          type: string
+        descripcion:
+          type: string
+        totalDebito:
+          type: number
+        totalCredito:
+          type: number
+        lineas:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovimientoLinea"
+        createdAt:
+          type: string
+
+    MovimientoInput:
+      type: object
+      required: [tipo, fecha, descripcion, lineas]
+      properties:
+        tipo:
+          type: string
+        fecha:
+          type: string
+          format: date
+        descripcion:
+          type: string
+        lineas:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovimientoLineaInput"
+
+    # ─── CRM ──────────────────────────────────────────────────────────────────
+    Oportunidad:
+      type: object
+      required:
+        - id
+        - titulo
+        - clienteId
+        - clienteNombre
+        - etapa
+        - valor
+        - probabilidad
+        - fechaCierre
+        - createdAt
+      properties:
+        id:
+          type: integer
+        titulo:
+          type: string
+        clienteId:
+          type: integer
+        clienteNombre:
+          type: string
+        etapa:
+          type: string
+          enum: [prospecto, calificado, propuesta, negociacion, ganado, perdido]
+        valor:
+          type: number
+        probabilidad:
+          type: integer
+        fechaCierre:
+          type: string
+        descripcion:
+          type: ["string", "null"]
+        responsable:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    OportunidadInput:
+      type: object
+      required: [titulo, clienteId, etapa, valor, probabilidad, fechaCierre]
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+        clienteId:
+          type: integer
+        etapa:
+          type: string
+          enum: [prospecto, calificado, propuesta, negociacion, ganado, perdido]
+        valor:
+          type: number
+        probabilidad:
+          type: integer
+        fechaCierre:
+          type: string
+          format: date
+        descripcion:
+          type: string
+        responsable:
+          type: string
+
+    OportunidadUpdate:
+      type: object
+      properties:
+        titulo:
+          type: string
+        etapa:
+          type: string
+          enum: [prospecto, calificado, propuesta, negociacion, ganado, perdido]
+        valor:
+          type: number
+        probabilidad:
+          type: integer
+        fechaCierre:
+          type: string
+        descripcion:
+          type: string
+        responsable:
+          type: string
+
+    CrmStats:
+      type: object
+      required:
+        - totalOportunidades
+        - valorPipeline
+        - ganadas
+        - perdidas
+        - tasaConversion
+      properties:
+        totalOportunidades:
+          type: integer
+        valorPipeline:
+          type: number
+        ganadas:
+          type: integer
+        perdidas:
+          type: integer
+        tasaConversion:
+          type: number
+        porEtapa:
+          type: array
+          items:
+            type: object
+            required: [etapa, cantidad, valor]
+            properties:
+              etapa:
+                type: string
+              cantidad:
+                type: integer
+              valor:
+                type: number

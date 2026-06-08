@@ -1,10 +1,11 @@
-# [Project name]
+# ContaNova ERP
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+ERP empresarial moderno para gestión contable, facturación, inventarios, cartera y CRM de empresas latinoamericanas.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
+- `pnpm --filter @workspace/contanova run dev` — run the frontend (port 25277)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
@@ -14,6 +15,7 @@ _Replace the heading above with the project's name, and this line with one sente
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
+- Frontend: React 19 + Vite + Tailwind CSS + Shadcn UI + Framer Motion + Recharts + Wouter
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
 - Validation: Zod (`zod/v4`), `drizzle-zod`
@@ -22,23 +24,36 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `lib/api-spec/openapi.yaml` — OpenAPI spec (source of truth for all contracts)
+- `lib/db/src/schema/` — Drizzle table schemas (clientes, proveedores, productos, facturas, compras, contabilidad, crm)
+- `artifacts/api-server/src/routes/` — Express route handlers (dashboard, clientes, proveedores, productos, facturas, compras, cartera, contabilidad, crm)
+- `artifacts/contanova/src/` — React frontend ERP
+- `attached_assets/image_1780897460881.png` — ContaNova logo
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Contract-first API: OpenAPI spec → Orval codegen → React Query hooks (frontend) + Zod schemas (backend validation)
+- Numeric DB values stored as `numeric(14,2)` strings in Drizzle, cast to `Number()` in routes before sending JSON
+- IVA (tax) hardcoded at 19% (Colombia standard) — invoices auto-calculate subtotal + impuesto + total
+- Cartera routes derive CxC/CxP from factura/compra `saldo_pendiente` field; abonos reduce `saldo_pendiente` in-place
+- Dark-mode-first design with navy (#0a1628) + electric blue gradient (#1a56e8 → #00d4ff) brand identity
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+ContaNova ofrece: Dashboard ejecutivo con KPIs en tiempo real, gestión de clientes y proveedores, catálogo de productos con control de inventario, facturación electrónica con items dinámicos, órdenes de compra, cartera (CxC/CxP) con abonos, plan de cuentas contables con comprobantes, y pipeline CRM tipo Kanban.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Nombre del software: ContaNova
+- Logo: `attached_assets/image_1780897460881.png`
+- Idioma de la UI: Español
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Run `pnpm --filter @workspace/api-spec run codegen` after any OpenAPI spec change before touching frontend
+- `pnpm --filter @workspace/db run push` after any schema change in `lib/db/src/schema/`
+- Numeric Drizzle columns return strings — always wrap with `Number()` before JSON responses
+- Express 5 wildcard routes must use `/{*splat}` syntax, NOT bare `*`
 
 ## Pointers
 

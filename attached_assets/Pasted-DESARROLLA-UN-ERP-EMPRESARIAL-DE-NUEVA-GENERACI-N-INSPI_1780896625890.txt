@@ -1,0 +1,210 @@
+DESARROLLA UN ERP EMPRESARIAL DE NUEVA GENERACIÓN INSPIRADO EN CONTAPYME, PERO COMPLETAMENTE MODERNIZADO PARA 2026.
+
+NOMBRE DEL PROYECTO:
+ProERP Next
+
+STACK TECNOLÓGICO:
+
+Frontend:
+
+* React 19
+* TypeScript
+* Vite
+* Tailwind CSS
+* Shadcn UI
+* Framer Motion
+* React Query
+* Recharts
+
+Backend:
+
+* Node.js
+* Express
+* PostgreSQL
+* Prisma ORM
+* JWT Authentication
+* RBAC (Roles y Permisos)
+
+ARQUITECTURA:
+
+Multiempresa
+Multiusuario
+Escalable
+Modular
+API REST
+Preparado para SaaS
+
+=================================
+DISEÑO VISUAL
+=============
+
+Crear una interfaz premium inspirada en:
+
+* Stripe
+* Notion
+* Linear
+* Hubspot
+* Odoo moderno
+
+Características visuales:
+
+* Glassmorphism
+* Dark Mode
+* Light Mode
+* Sidebar colapsable
+* Dashboard interactivo
+* Microanimaciones
+* Transiciones suaves
+* Responsive completo
+* Widgets dinámicos
+* Indicadores KPI
+
+=================================
+MÓDULOS
+=======
+
+1. DASHBOARD EJECUTIVO
+
+* Ventas hoy
+* Ventas mes
+* Utilidad
+* Flujo de caja
+* Productos más vendidos
+* Clientes frecuentes
+* Alertas inteligentes
+* Gráficos en tiempo real
+
+2. EMPRESA
+
+* Datos generales
+* Sucursales
+* Centros de costo
+* Configuración tributaria
+* Certificados
+
+3. TERCEROS
+
+* Clientes
+* Proveedores
+* Empleados
+* Transportadoras
+* Contactos
+
+4. CONTABILIDAD
+
+* Plan de cuentas
+* Comprobantes
+* Libro diario
+* Libro mayor
+* Balance general
+* Estado de resultados
+* NIIF
+* Centros de costo
+* Conciliación bancaria
+
+5. FACTURACIÓN
+
+* POS
+* Factura electrónica
+* Notas crédito
+* Notas débito
+* Cotizaciones
+* Remisiones
+* Recibos
+
+6. CARTERA
+
+* Cuentas por cobrar
+* Cuentas por pagar
+* Vencimientos
+* Abonos
+* Estados de cuenta
+* Historial
+
+7. INVENTARIOS
+
+* Entradas
+* Salidas
+* Ajustes
+* Kardex
+* Lotes
+* Vencimientos
+* Costeo promedio
+* Costeo FIFO
+
+8. COMPRAS
+
+* Órdenes de compra
+* Recepción de mercancía
+* Facturas proveedor
+* Devoluciones
+
+9. TESORERÍA
+
+* Caja
+* Bancos
+* Conciliaciones
+* Flujo de efectivo
+
+10. CRM
+
+* Seguimiento comercial
+* Embudo de ventas
+* Actividades
+* Tareas
+* Recordatorios
+
+11. RRHH
+
+* Empleados
+* Préstamos
+* Vacaciones
+* Nómina preparada
+
+12. REPORTES
+
+* PDF
+* Excel
+* CSV
+* Dashboard interactivo
+
+=================================
+IA EMPRESARIAL
+==============
+
+Implementar módulo de IA que:
+
+* Prediga ventas
+* Detecte productos lentos
+* Sugiera compras
+* Analice rentabilidad
+* Genere reportes automáticos
+* Detecte anomalías financieras
+
+=================================
+SEGURIDAD
+=========
+
+* JWT
+* Refresh Tokens
+* Logs de auditoría
+* Historial de cambios
+* Roles y permisos granulares
+* Backup automático
+
+=================================
+BASE DE DATOS
+=============
+
+Generar:
+
+* Schema Prisma completo
+* Relaciones
+* Migraciones
+* Datos de ejemplo
+
+=================================
+ENTREGABLE
+==========
+
+Generar el proyecto completo listo para ejecutar en Replit con frontend, backend, base de datos, autenticación, dashboard moderno y todos los módulos funcionales.
