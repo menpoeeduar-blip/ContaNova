@@ -24,6 +24,7 @@ router.get("/compras", async (req, res): Promise<void> => {
     subtotal: comprasTable.subtotal,
     impuesto: comprasTable.impuesto,
     total: comprasTable.total,
+    saldoPendiente: comprasTable.saldoPendiente,
     estado: comprasTable.estado,
     notas: comprasTable.notas,
     createdAt: comprasTable.createdAt,

@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useGetFacturasResumen, useListFacturas, useCreateFactura } from "@workspace/api-client-react";
-import { formatCurrency } from "@/lib/format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useGetFacturasResumen, useListFacturas, useCreateFactura, useListClientes } from "@workspace/api-client-react";
+import { formatCurrency, formatNumber } from "@/lib/format";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,9 +26,9 @@ export default function Facturacion() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              type="search" 
-              placeholder="Buscar factura..." 
+            <Input
+              type="search"
+              placeholder="Buscar factura..."
               className="pl-9 bg-card border-border"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -41,9 +41,9 @@ export default function Facturacion() {
                 Nueva Factura
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] bg-card border-border">
+            <DialogContent className="sm:max-w-[620px] bg-card border-border">
               <DialogHeader>
-                <DialogTitle>Crear Factura</DialogTitle>
+                <DialogTitle>Crear Factura de Venta</DialogTitle>
               </DialogHeader>
               <CreateFacturaForm onSuccess={() => setIsCreateOpen(false)} />
             </DialogContent>
@@ -55,8 +55,13 @@ export default function Facturacion() {
         <Card className="bg-card border-border shadow-sm">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Borrador</p>
-              {resumenLoading ? <Skeleton className="h-8 w-20 mt-1" /> : <h3 className="text-2xl font-bold mt-1">{formatCurrency(resumen?.totalBorrador || 0)}</h3>}
+              <p className="text-sm font-medium text-muted-foreground">Borradores</p>
+              {resumenLoading ? <Skeleton className="h-8 w-20 mt-1" /> : (
+                <>
+                  <h3 className="text-2xl font-bold mt-1">{formatNumber(resumen?.totalBorrador || 0)}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">facturas</p>
+                </>
+              )}
             </div>
             <div className="p-3 bg-muted rounded-lg text-muted-foreground"><FileText className="w-5 h-5" /></div>
           </CardContent>
@@ -65,7 +70,12 @@ export default function Facturacion() {
           <CardContent className="p-6 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Emitidas</p>
-              {resumenLoading ? <Skeleton className="h-8 w-20 mt-1" /> : <h3 className="text-2xl font-bold mt-1 text-primary">{formatCurrency(resumen?.totalEmitidas || 0)}</h3>}
+              {resumenLoading ? <Skeleton className="h-8 w-20 mt-1" /> : (
+                <>
+                  <h3 className="text-2xl font-bold mt-1 text-primary">{formatNumber(resumen?.totalEmitidas || 0)}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">{formatCurrency(resumen?.montoPendiente || 0)} pendiente</p>
+                </>
+              )}
             </div>
             <div className="p-3 bg-primary/10 rounded-lg text-primary"><Clock className="w-5 h-5" /></div>
           </CardContent>
@@ -74,7 +84,12 @@ export default function Facturacion() {
           <CardContent className="p-6 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Pagadas</p>
-              {resumenLoading ? <Skeleton className="h-8 w-20 mt-1" /> : <h3 className="text-2xl font-bold mt-1 text-green-500">{formatCurrency(resumen?.totalPagadas || 0)}</h3>}
+              {resumenLoading ? <Skeleton className="h-8 w-20 mt-1" /> : (
+                <>
+                  <h3 className="text-2xl font-bold mt-1 text-green-500">{formatNumber(resumen?.totalPagadas || 0)}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">facturas cobradas</p>
+                </>
+              )}
             </div>
             <div className="p-3 bg-green-500/10 rounded-lg text-green-500"><CheckCircle2 className="w-5 h-5" /></div>
           </CardContent>
@@ -82,10 +97,15 @@ export default function Facturacion() {
         <Card className="bg-card border-border shadow-sm">
           <CardContent className="p-6 flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Anuladas</p>
-              {resumenLoading ? <Skeleton className="h-8 w-20 mt-1" /> : <h3 className="text-2xl font-bold mt-1 text-destructive">{formatCurrency(resumen?.totalAnuladas || 0)}</h3>}
+              <p className="text-sm font-medium text-muted-foreground">Este Mes</p>
+              {resumenLoading ? <Skeleton className="h-8 w-32 mt-1" /> : (
+                <>
+                  <h3 className="text-2xl font-bold mt-1 text-foreground">{formatCurrency(resumen?.montoMes || 0)}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">total facturado</p>
+                </>
+              )}
             </div>
-            <div className="p-3 bg-destructive/10 rounded-lg text-destructive"><Ban className="w-5 h-5" /></div>
+            <div className="p-3 bg-secondary rounded-lg text-foreground"><Ban className="w-5 h-5" /></div>
           </CardContent>
         </Card>
       </div>
@@ -108,7 +128,7 @@ export default function Facturacion() {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i} className="border-border">
-                    <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
@@ -125,24 +145,28 @@ export default function Facturacion() {
                 </TableRow>
               ) : (
                 facturas?.map((factura) => (
-                  <TableRow key={factura.id} className="border-border hover:bg-muted/30 transition-colors cursor-pointer">
+                  <TableRow key={factura.id} className="border-border hover:bg-muted/30 transition-colors">
                     <TableCell className="font-mono text-sm font-medium">{factura.numero}</TableCell>
                     <TableCell className="font-medium">{factura.clienteNombre}</TableCell>
-                    <TableCell>{new Date(factura.fecha).toLocaleDateString()}</TableCell>
-                    <TableCell>{new Date(factura.fechaVencimiento).toLocaleDateString()}</TableCell>
+                    <TableCell>{new Date(factura.fecha + "T12:00:00").toLocaleDateString("es-CO")}</TableCell>
+                    <TableCell>{new Date(factura.fechaVencimiento + "T12:00:00").toLocaleDateString("es-CO")}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={
-                        factura.estado === 'pagada' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
-                        factura.estado === 'emitida' ? 'bg-primary/10 text-primary border-primary/20' :
-                        factura.estado === 'anulada' ? 'bg-destructive/10 text-destructive border-destructive/20' :
-                        'bg-muted text-muted-foreground'
+                        factura.estado === "pagada" ? "bg-green-500/10 text-green-500 border-green-500/20" :
+                        factura.estado === "emitida" ? "bg-primary/10 text-primary border-primary/20" :
+                        factura.estado === "anulada" ? "bg-destructive/10 text-destructive border-destructive/20" :
+                        "bg-muted text-muted-foreground"
                       }>
-                        {factura.estado.charAt(0).toUpperCase() + factura.estado.slice(1)}
+                        {factura.estado === "pagada" ? "Pagada" :
+                         factura.estado === "emitida" ? "Emitida" :
+                         factura.estado === "anulada" ? "Anulada" : "Borrador"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right font-medium">{formatCurrency(factura.total)}</TableCell>
-                    <TableCell className="text-right font-bold text-foreground">
-                      {factura.saldoPendiente !== null ? formatCurrency(factura.saldoPendiente) : '-'}
+                    <TableCell className="text-right font-bold">
+                      {factura.saldoPendiente !== null && factura.saldoPendiente !== undefined
+                        ? formatCurrency(factura.saldoPendiente)
+                        : "-"}
                     </TableCell>
                   </TableRow>
                 ))
@@ -157,102 +181,146 @@ export default function Facturacion() {
 
 function CreateFacturaForm({ onSuccess }: { onSuccess: () => void }) {
   const createMutation = useCreateFactura();
+  const { data: clientes } = useListClientes({});
   const [formData, setFormData] = useState({
-    clienteId: 1, // placeholder for a real select
-    fecha: new Date().toISOString().split('T')[0],
-    fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    items: [{ descripcion: "", cantidad: 1, precioUnitario: 0 }]
+    clienteId: 0,
+    fecha: new Date().toISOString().split("T")[0],
+    fechaVencimiento: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    items: [{ descripcion: "", cantidad: 1, precioUnitario: 0 }],
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.clienteId) return;
     createMutation.mutate(
-      { data: { ...formData, fecha: new Date(formData.fecha).toISOString(), fechaVencimiento: new Date(formData.fechaVencimiento).toISOString() } },
+      { data: { ...formData } },
       { onSuccess: () => onSuccess() }
     );
   };
 
-  const addItem = () => setFormData({ ...formData, items: [...formData.items, { descripcion: "", cantidad: 1, precioUnitario: 0 }] });
+  const addItem = () =>
+    setFormData({ ...formData, items: [...formData.items, { descripcion: "", cantidad: 1, precioUnitario: 0 }] });
+
+  const removeItem = (index: number) => {
+    if (formData.items.length === 1) return;
+    setFormData({ ...formData, items: formData.items.filter((_, i) => i !== index) });
+  };
+
+  const subtotal = formData.items.reduce((acc, item) => acc + item.cantidad * item.precioUnitario, 0);
+  const iva = subtotal * 0.19;
+  const total = subtotal + iva;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+    <form onSubmit={handleSubmit} className="space-y-4 pt-2 max-h-[75vh] overflow-y-auto pr-1">
       <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2 col-span-2">
+          <label className="text-sm font-medium">Cliente *</label>
+          <select
+            required
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            value={formData.clienteId || ""}
+            onChange={(e) => setFormData({ ...formData, clienteId: Number(e.target.value) })}
+          >
+            <option value="">-- Seleccionar cliente --</option>
+            {clientes?.map((c) => (
+              <option key={c.id} value={c.id}>{c.nombre} ({c.tipoDocumento} {c.numeroDocumento})</option>
+            ))}
+          </select>
+        </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">Cliente ID (Temporal)</label>
-          <Input 
-            type="number" required 
-            value={formData.clienteId} 
-            onChange={(e) => setFormData({...formData, clienteId: Number(e.target.value)})}
+          <label className="text-sm font-medium">Fecha de Emisión *</label>
+          <Input
+            type="date" required
+            value={formData.fecha}
+            onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
             className="bg-background"
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">Fecha Emisión</label>
-          <Input 
-            type="date" required 
-            value={formData.fecha} 
-            onChange={(e) => setFormData({...formData, fecha: e.target.value})}
-            className="bg-background"
-          />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Fecha Vencimiento</label>
-          <Input 
-            type="date" required 
-            value={formData.fechaVencimiento} 
-            onChange={(e) => setFormData({...formData, fechaVencimiento: e.target.value})}
+          <label className="text-sm font-medium">Fecha de Vencimiento *</label>
+          <Input
+            type="date" required
+            value={formData.fechaVencimiento}
+            onChange={(e) => setFormData({ ...formData, fechaVencimiento: e.target.value })}
             className="bg-background"
           />
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3 pt-2">
         <div className="flex justify-between items-center">
           <h4 className="font-semibold text-sm">Líneas de Factura</h4>
-          <Button type="button" variant="outline" size="sm" onClick={addItem}><Plus className="w-3 h-3 mr-1"/> Añadir Línea</Button>
+          <Button type="button" variant="outline" size="sm" onClick={addItem}>
+            <Plus className="w-3 h-3 mr-1" /> Añadir Línea
+          </Button>
+        </div>
+        <div className="grid grid-cols-12 gap-1 text-xs text-muted-foreground px-2">
+          <span className="col-span-6">Descripción</span>
+          <span className="col-span-2 text-center">Cant.</span>
+          <span className="col-span-3 text-right">Precio Unit.</span>
+          <span className="col-span-1" />
         </div>
         {formData.items.map((item, index) => (
           <div key={index} className="grid grid-cols-12 gap-2 items-center bg-muted/20 p-2 rounded-md border border-border">
             <div className="col-span-6">
-              <Input 
+              <Input
                 placeholder="Descripción del concepto" required
                 value={item.descripcion}
                 onChange={(e) => {
                   const newItems = [...formData.items];
                   newItems[index].descripcion = e.target.value;
-                  setFormData({...formData, items: newItems});
+                  setFormData({ ...formData, items: newItems });
                 }}
+                className="bg-background text-sm h-9"
               />
             </div>
             <div className="col-span-2">
-              <Input 
+              <Input
                 type="number" placeholder="Cant" required min="1"
                 value={item.cantidad || ""}
                 onChange={(e) => {
                   const newItems = [...formData.items];
                   newItems[index].cantidad = Number(e.target.value);
-                  setFormData({...formData, items: newItems});
+                  setFormData({ ...formData, items: newItems });
                 }}
+                className="bg-background text-sm h-9"
               />
             </div>
-            <div className="col-span-4">
-              <Input 
-                type="number" placeholder="Precio Unit" required min="0"
+            <div className="col-span-3">
+              <Input
+                type="number" placeholder="Precio" required min="0"
                 value={item.precioUnitario || ""}
                 onChange={(e) => {
                   const newItems = [...formData.items];
                   newItems[index].precioUnitario = Number(e.target.value);
-                  setFormData({...formData, items: newItems});
+                  setFormData({ ...formData, items: newItems });
                 }}
+                className="bg-background text-sm h-9"
               />
+            </div>
+            <div className="col-span-1 flex justify-center">
+              <button type="button" onClick={() => removeItem(index)}
+                className="text-muted-foreground hover:text-destructive transition-colors text-lg leading-none">×</button>
             </div>
           </div>
         ))}
       </div>
-      
-      <div className="pt-4 flex justify-end gap-2 border-t border-border mt-6">
+
+      <div className="bg-muted/30 rounded-lg p-4 space-y-1 text-sm">
+        <div className="flex justify-between text-muted-foreground">
+          <span>Subtotal</span><span>{formatCurrency(subtotal)}</span>
+        </div>
+        <div className="flex justify-between text-muted-foreground">
+          <span>IVA 19%</span><span>{formatCurrency(iva)}</span>
+        </div>
+        <div className="flex justify-between font-bold text-base pt-1 border-t border-border">
+          <span>Total</span><span className="text-primary">{formatCurrency(total)}</span>
+        </div>
+      </div>
+
+      <div className="pt-2 flex justify-end gap-2 border-t border-border">
         <Button type="button" variant="outline" onClick={onSuccess}>Cancelar</Button>
-        <Button type="submit" disabled={createMutation.isPending}>
+        <Button type="submit" disabled={createMutation.isPending || !formData.clienteId}>
           {createMutation.isPending ? "Guardando..." : "Emitir Factura"}
         </Button>
       </div>
