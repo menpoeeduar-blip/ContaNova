@@ -5,12 +5,13 @@
   "packageManager": "pnpm@10.33.2",
   "scripts": {
     "preinstall": "node -e \"if (!process.env.CI && !/pnpm/.test(process.env.npm_config_user_agent || '')) { console.error('Use pnpm instead'); process.exit(1); }\"",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
-    "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsc --build && pnpm -r --workspace-concurrency 1 --if-present run build",
+    "typecheck": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsc --build"
   },
   "private": true,
   "devDependencies": {
+    "@vercel/node": "^5.9.3",
+    "cross-env": "^10.1.0",
     "prettier": "^3.8.3",
     "typescript": "~5.9.3"
   },
