@@ -9,9 +9,12 @@ import {
   Wallet, 
   BookOpen, 
   PieChart,
-  ShieldAlert
+  ShieldAlert,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 import logoUrl from "@assets/image_1780897460881.png";
 
 const navItems = [
@@ -29,6 +32,14 @@ const navItems = [
 
 export function Sidebar() {
   const [location] = useLocation();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (err) {
+      console.error("Error al cerrar sesión:", err);
+    }
+  };
 
   return (
     <div className="w-64 border-r border-border bg-card h-screen flex flex-col">
@@ -53,6 +64,28 @@ export function Sidebar() {
             </Link>
           );
         })}
+      </div>
+      {/* User info + sign out */}
+      <div className="border-t border-border p-4">
+        <div className="flex items-center gap-3 mb-3 px-1">
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-bold">
+            {auth.currentUser?.email?.[0]?.toUpperCase() ?? "U"}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-foreground truncate">
+              {auth.currentUser?.email ?? "Usuario"}
+            </p>
+            <p className="text-xs text-muted-foreground">Administrador</p>
+          </div>
+        </div>
+        <button
+          id="signout-btn"
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+        >
+          <LogOut className="h-4 w-4" />
+          Cerrar Sesión
+        </button>
       </div>
     </div>
   );

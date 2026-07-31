@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,6 +15,9 @@ import Compras from "@/pages/compras";
 import Contabilidad from "@/pages/contabilidad";
 import Deudores from "@/pages/deudores";
 import NotFound from "@/pages/not-found";
+import Login from "@/pages/login";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, type User } from "firebase/auth";
 
 const queryClient = new QueryClient();
 
@@ -38,9 +42,42 @@ function Router() {
 }
 
 function App() {
-  // Toggle dark mode initially
-  if (typeof document !== 'undefined') {
-    document.documentElement.classList.add('dark');
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    document.documentElement.classList.add("dark");
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
+    return unsub;
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        flexDirection: "column", gap: "16px",
+      }}>
+        <div style={{
+          width: "48px", height: "48px", borderRadius: "50%",
+          border: "3px solid rgba(99,102,241,0.3)",
+          borderTopColor: "#6366f1",
+          animation: "spin 0.8s linear infinite",
+        }} />
+        <p style={{ color: "rgba(255,255,255,0.5)", fontFamily: "Inter, sans-serif", fontSize: "14px" }}>
+          Cargando ContaNova...
+        </p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login onLogin={() => {}} />;
   }
 
   return (
