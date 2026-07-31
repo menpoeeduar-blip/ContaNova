@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "outputDirectory": "artifacts/api-server/dist",
-  "buildCommand": "pnpm --filter @workspace/api-server run build",
+  "outputDirectory": "dist",
+  "buildCommand": "pnpm --filter @workspace/api-server run build && node -e \"require('fs').cpSync('artifacts/api-server/dist', 'dist', {recursive: true})\"",
   "functions": {
     "api/index.ts": {
       "maxDuration": 30,
