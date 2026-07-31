@@ -1,16 +1,9 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "../.vercel/output/functions",
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "skipLibCheck": true,
-    "types": ["node"]
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "skipLibCheck": true
   },
-  "include": ["*.ts"],
-  "references": [
-    { "path": "../artifacts/api-server" },
-    { "path": "../lib/db" },
-    { "path": "../lib/api-zod" }
-  ]
+  "include": ["*.ts"]
 }
