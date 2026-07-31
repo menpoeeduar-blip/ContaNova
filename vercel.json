@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "outputDirectory": "public",
-  "buildCommand": "pnpm --filter @workspace/db build 2>/dev/null || true && pnpm --filter @workspace/api-server run build",
+  "outputDirectory": "artifacts/api-server/dist",
+  "buildCommand": "pnpm --filter @workspace/api-server run build",
   "functions": {
     "api/index.ts": {
       "maxDuration": 30,
