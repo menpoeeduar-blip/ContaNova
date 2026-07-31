@@ -1,7 +1,13 @@
 {
   "version": 2,
   "outputDirectory": "public",
-  "buildCommand": "echo 'no build needed'",
+  "buildCommand": "node -e \"require('fs').mkdirSync('public', {recursive: true})\"",
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
