@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "installCommand": "pnpm install --frozen-lockfile",
+  "outputDirectory": "public",
   "buildCommand": "pnpm --filter @workspace/db build 2>/dev/null || true && pnpm --filter @workspace/api-server run build",
   "functions": {
     "api/index.ts": {
@@ -11,10 +11,6 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api"
-    },
-    {
-      "source": "/(.*)",
       "destination": "/api"
     }
   ]
