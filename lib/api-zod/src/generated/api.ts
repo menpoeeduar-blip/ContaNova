@@ -100,6 +100,8 @@ export const ListClientesResponseItem = zod.object({
   "ciudad": zod.string().nullish(),
   "activo": zod.boolean(),
   "saldoPendiente": zod.number().nullish(),
+  "estadoCobranza": zod.enum(['activo', 'deudor', 'reportado', 'inactivo']).optional(),
+  "notasCobranza": zod.string().nullish(),
   "createdAt": zod.string()
 })
 export const ListClientesResponse = zod.array(ListClientesResponseItem)
@@ -118,7 +120,9 @@ export const CreateClienteBody = zod.object({
   "email": zod.string().optional(),
   "telefono": zod.string().optional(),
   "direccion": zod.string().optional(),
-  "ciudad": zod.string().optional()
+  "ciudad": zod.string().optional(),
+  "estadoCobranza": zod.enum(['activo', 'deudor', 'reportado', 'inactivo']).optional(),
+  "notasCobranza": zod.string().optional()
 })
 
 
@@ -140,6 +144,8 @@ export const GetClienteResponse = zod.object({
   "ciudad": zod.string().nullish(),
   "activo": zod.boolean(),
   "saldoPendiente": zod.number().nullish(),
+  "estadoCobranza": zod.enum(['activo', 'deudor', 'reportado', 'inactivo']).optional(),
+  "notasCobranza": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -159,7 +165,9 @@ export const UpdateClienteBody = zod.object({
   "telefono": zod.string().optional(),
   "direccion": zod.string().optional(),
   "ciudad": zod.string().optional(),
-  "activo": zod.boolean().optional()
+  "activo": zod.boolean().optional(),
+  "estadoCobranza": zod.enum(['activo', 'deudor', 'reportado', 'inactivo']).optional(),
+  "notasCobranza": zod.string().optional()
 })
 
 export const UpdateClienteResponse = zod.object({
@@ -173,6 +181,8 @@ export const UpdateClienteResponse = zod.object({
   "ciudad": zod.string().nullish(),
   "activo": zod.boolean(),
   "saldoPendiente": zod.number().nullish(),
+  "estadoCobranza": zod.enum(['activo', 'deudor', 'reportado', 'inactivo']).optional(),
+  "notasCobranza": zod.string().nullish(),
   "createdAt": zod.string()
 })
 
@@ -577,6 +587,7 @@ export const ListComprasResponseItem = zod.object({
   "subtotal": zod.number().optional(),
   "impuesto": zod.number().optional(),
   "total": zod.number(),
+  "saldoPendiente": zod.number().nullish(),
   "estado": zod.enum(['pendiente', 'recibida', 'pagada', 'anulada']),
   "notas": zod.string().nullish(),
   "createdAt": zod.string()
@@ -618,6 +629,7 @@ export const GetCompraResponse = zod.object({
   "subtotal": zod.number().optional(),
   "impuesto": zod.number().optional(),
   "total": zod.number(),
+  "saldoPendiente": zod.number().nullish(),
   "estado": zod.enum(['pendiente', 'recibida', 'pagada', 'anulada']),
   "notas": zod.string().nullish(),
   "items": zod.array(zod.object({
@@ -656,6 +668,7 @@ export const UpdateCompraResponse = zod.object({
   "subtotal": zod.number().optional(),
   "impuesto": zod.number().optional(),
   "total": zod.number(),
+  "saldoPendiente": zod.number().nullish(),
   "estado": zod.enum(['pendiente', 'recibida', 'pagada', 'anulada']),
   "notas": zod.string().nullish(),
   "createdAt": zod.string()

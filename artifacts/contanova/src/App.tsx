@@ -12,6 +12,7 @@ import CRM from "@/pages/crm";
 import Facturacion from "@/pages/facturacion";
 import Compras from "@/pages/compras";
 import Contabilidad from "@/pages/contabilidad";
+import Deudores from "@/pages/deudores";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/clientes" component={Clientes} />
+        <Route path="/deudores" component={Deudores} />
         <Route path="/proveedores" component={Proveedores} />
         <Route path="/productos" component={Productos} />
         <Route path="/cartera" component={Cartera} />

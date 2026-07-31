@@ -1094,6 +1094,11 @@ components:
           type: boolean
         saldoPendiente:
           type: ["number", "null"]
+        estadoCobranza:
+          type: string
+          enum: [activo, deudor, reportado, inactivo]
+        notasCobranza:
+          type: ["string", "null"]
         createdAt:
           type: string
 
@@ -1116,6 +1121,11 @@ components:
           type: string
         ciudad:
           type: string
+        estadoCobranza:
+          type: string
+          enum: [activo, deudor, reportado, inactivo]
+        notasCobranza:
+          type: string
 
     ClienteUpdate:
       type: object
@@ -1136,6 +1146,11 @@ components:
           type: string
         activo:
           type: boolean
+        estadoCobranza:
+          type: string
+          enum: [activo, deudor, reportado, inactivo]
+        notasCobranza:
+          type: string
 
     ClienteResumen:
       type: object
@@ -1582,6 +1597,8 @@ components:
           type: number
         total:
           type: number
+        saldoPendiente:
+          type: ["number", "null"]
         estado:
           type: string
           enum: [pendiente, recibida, pagada, anulada]
@@ -1621,6 +1638,8 @@ components:
           type: number
         total:
           type: number
+        saldoPendiente:
+          type: ["number", "null"]
         estado:
           type: string
           enum: [pendiente, recibida, pagada, anulada]

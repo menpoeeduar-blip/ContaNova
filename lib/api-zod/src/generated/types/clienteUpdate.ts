@@ -5,6 +5,7 @@
  * ContaNova ERP API
  * OpenAPI spec version: 0.1.0
  */
+import type { ClienteUpdateEstadoCobranza } from './clienteUpdateEstadoCobranza';
 
 export interface ClienteUpdate {
   nombre?: string;
@@ -15,4 +16,6 @@ export interface ClienteUpdate {
   direccion?: string;
   ciudad?: string;
   activo?: boolean;
+  estadoCobranza?: ClienteUpdateEstadoCobranza;
+  notasCobranza?: string;
 }

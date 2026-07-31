@@ -5,6 +5,7 @@
  * ContaNova ERP API
  * OpenAPI spec version: 0.1.0
  */
+import type { ClienteInputEstadoCobranza } from './clienteInputEstadoCobranza';
 
 export interface ClienteInput {
   /** @minLength 1 */
@@ -15,4 +16,6 @@ export interface ClienteInput {
   telefono?: string;
   direccion?: string;
   ciudad?: string;
+  estadoCobranza?: ClienteInputEstadoCobranza;
+  notasCobranza?: string;
 }

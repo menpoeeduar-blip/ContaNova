@@ -57,9 +57,9 @@ router.get("/clientes/:id", async (req, res): Promise<void> => {
 router.patch("/clientes/:id", async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(raw, 10);
-  const { nombre, tipoDocumento, numeroDocumento, email, telefono, direccion, ciudad, activo } = req.body;
+  const { nombre, tipoDocumento, numeroDocumento, email, telefono, direccion, ciudad, activo, estadoCobranza, notasCobranza } = req.body;
   const [cliente] = await db.update(clientesTable)
-    .set({ nombre, tipoDocumento, numeroDocumento, email, telefono, direccion, ciudad, activo })
+    .set({ nombre, tipoDocumento, numeroDocumento, email, telefono, direccion, ciudad, activo, estadoCobranza, notasCobranza })
     .where(eq(clientesTable.id, id))
     .returning();
   if (!cliente) {

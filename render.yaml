@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: contanova-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: pnpm install && pnpm run build:api
+    startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        sync: false  # Set this manually in Render dashboard
+      - key: CORS_ORIGIN
+        value: "https://menpoe-contanova.web.app,https://menpoe-contanova.firebaseapp.com"
+    autoDeploy: true
+    healthCheckPath: /api/healthz

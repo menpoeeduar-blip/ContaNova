@@ -52,6 +52,16 @@ export interface FlujoCajaItem {
   saldo: number;
 }
 
+export type ClienteEstadoCobranza = typeof ClienteEstadoCobranza[keyof typeof ClienteEstadoCobranza];
+
+
+export const ClienteEstadoCobranza = {
+  activo: 'activo',
+  deudor: 'deudor',
+  reportado: 'reportado',
+  inactivo: 'inactivo',
+} as const;
+
 export interface Cliente {
   id: number;
   nombre: string;
@@ -68,8 +78,21 @@ export interface Cliente {
   activo: boolean;
   /** @nullable */
   saldoPendiente?: number | null;
+  estadoCobranza?: ClienteEstadoCobranza;
+  /** @nullable */
+  notasCobranza?: string | null;
   createdAt: string;
 }
+
+export type ClienteInputEstadoCobranza = typeof ClienteInputEstadoCobranza[keyof typeof ClienteInputEstadoCobranza];
+
+
+export const ClienteInputEstadoCobranza = {
+  activo: 'activo',
+  deudor: 'deudor',
+  reportado: 'reportado',
+  inactivo: 'inactivo',
+} as const;
 
 export interface ClienteInput {
   /** @minLength 1 */
@@ -80,7 +103,19 @@ export interface ClienteInput {
   telefono?: string;
   direccion?: string;
   ciudad?: string;
+  estadoCobranza?: ClienteInputEstadoCobranza;
+  notasCobranza?: string;
 }
+
+export type ClienteUpdateEstadoCobranza = typeof ClienteUpdateEstadoCobranza[keyof typeof ClienteUpdateEstadoCobranza];
+
+
+export const ClienteUpdateEstadoCobranza = {
+  activo: 'activo',
+  deudor: 'deudor',
+  reportado: 'reportado',
+  inactivo: 'inactivo',
+} as const;
 
 export interface ClienteUpdate {
   nombre?: string;
@@ -91,6 +126,8 @@ export interface ClienteUpdate {
   direccion?: string;
   ciudad?: string;
   activo?: boolean;
+  estadoCobranza?: ClienteUpdateEstadoCobranza;
+  notasCobranza?: string;
 }
 
 export interface ClienteResumen {
@@ -349,6 +386,8 @@ export interface Compra {
   subtotal?: number;
   impuesto?: number;
   total: number;
+  /** @nullable */
+  saldoPendiente?: number | null;
   estado: CompraEstado;
   /** @nullable */
   notas?: string | null;
@@ -376,6 +415,8 @@ export interface CompraDetalle {
   subtotal?: number;
   impuesto?: number;
   total: number;
+  /** @nullable */
+  saldoPendiente?: number | null;
   estado: CompraDetalleEstado;
   /** @nullable */
   notas?: string | null;

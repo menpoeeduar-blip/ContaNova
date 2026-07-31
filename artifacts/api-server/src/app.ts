@@ -25,7 +25,16 @@ app.use(
     },
   }),
 );
-app.use(cors());
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+  : ["http://localhost:5173", "https://menpoe-contanova.web.app", "https://menpoe-contanova.firebaseapp.com"];
+
+app.use(
+  cors({
+    origin: corsOrigins,
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

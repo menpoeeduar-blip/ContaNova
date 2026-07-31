@@ -19,6 +19,8 @@ export interface CompraDetalle {
   subtotal?: number;
   impuesto?: number;
   total: number;
+  /** @nullable */
+  saldoPendiente?: number | null;
   estado: CompraDetalleEstado;
   /** @nullable */
   notas?: string | null;

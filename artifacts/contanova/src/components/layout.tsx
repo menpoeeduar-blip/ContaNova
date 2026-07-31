@@ -8,7 +8,8 @@ import {
   ShoppingCart, 
   Wallet, 
   BookOpen, 
-  PieChart 
+  PieChart,
+  ShieldAlert
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logoUrl from "@assets/image_1780897460881.png";
@@ -16,6 +17,7 @@ import logoUrl from "@assets/image_1780897460881.png";
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/clientes", label: "Clientes", icon: Users },
+  { href: "/deudores", label: "Deudores & Cobro", icon: ShieldAlert },
   { href: "/proveedores", label: "Proveedores", icon: Building2 },
   { href: "/productos", label: "Productos", icon: Package },
   { href: "/facturacion", label: "Facturación", icon: FileText },

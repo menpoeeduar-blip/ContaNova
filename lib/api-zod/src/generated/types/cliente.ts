@@ -5,6 +5,7 @@
  * ContaNova ERP API
  * OpenAPI spec version: 0.1.0
  */
+import type { ClienteEstadoCobranza } from './clienteEstadoCobranza';
 
 export interface Cliente {
   id: number;
@@ -22,5 +23,8 @@ export interface Cliente {
   activo: boolean;
   /** @nullable */
   saldoPendiente?: number | null;
+  estadoCobranza?: ClienteEstadoCobranza;
+  /** @nullable */
+  notasCobranza?: string | null;
   createdAt: string;
 }
