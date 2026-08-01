@@ -96,6 +96,7 @@ export default function Cartera() {
 
 function CuentasCobrarList() {
   const { data, isLoading } = useListCuentasCobrar({});
+  const safeData = Array.isArray(data) ? data : [];
   return (
     <Card className="border-border shadow-sm overflow-hidden bg-card">
       <div className="overflow-x-auto">
@@ -114,10 +115,10 @@ function CuentasCobrarList() {
           <TableBody>
             {isLoading ? (
                <TableRow><TableCell colSpan={7} className="text-center h-24"><Skeleton className="w-full h-8" /></TableCell></TableRow>
-            ) : data?.length === 0 ? (
+            ) : safeData.length === 0 ? (
               <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No hay cuentas por cobrar pendientes.</TableCell></TableRow>
             ) : (
-              data?.map(c => (
+              safeData.map(c => (
                 <TableRow key={c.facturaId} className="border-border">
                   <TableCell className="font-mono text-sm">{c.numero}</TableCell>
                   <TableCell className="font-medium">{c.clienteNombre}</TableCell>
@@ -146,6 +147,7 @@ function CuentasCobrarList() {
 
 function CuentasPagarList() {
   const { data, isLoading } = useListCuentasPagar({});
+  const safeData = Array.isArray(data) ? data : [];
   return (
     <Card className="border-border shadow-sm overflow-hidden bg-card">
       <div className="overflow-x-auto">
@@ -163,10 +165,10 @@ function CuentasPagarList() {
           <TableBody>
             {isLoading ? (
                <TableRow><TableCell colSpan={6} className="text-center h-24"><Skeleton className="w-full h-8" /></TableCell></TableRow>
-            ) : data?.length === 0 ? (
+            ) : safeData.length === 0 ? (
               <TableRow><TableCell colSpan={6} className="text-center h-24 text-muted-foreground">No hay cuentas por pagar pendientes.</TableCell></TableRow>
             ) : (
-              data?.map(c => (
+              safeData.map(c => (
                 <TableRow key={c.compraId} className="border-border">
                   <TableCell className="font-mono text-sm">{c.numero}</TableCell>
                   <TableCell className="font-medium">{c.proveedorNombre}</TableCell>

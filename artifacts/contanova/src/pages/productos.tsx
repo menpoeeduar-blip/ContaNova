@@ -16,6 +16,8 @@ export default function Productos() {
   const { data: productos, isLoading } = useListProductos({ search });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const safeProductos = Array.isArray(productos) ? productos : [];
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div>
@@ -122,14 +124,14 @@ export default function Productos() {
                     <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
                   </TableRow>
                 ))
-              ) : productos?.length === 0 ? (
+              ) : safeProductos.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                     No se encontraron productos.
                   </TableCell>
                 </TableRow>
               ) : (
-                productos?.map((producto) => (
+                safeProductos.map((producto) => (
                   <TableRow key={producto.id} className="border-border hover:bg-muted/30 transition-colors">
                     <TableCell className="font-medium font-mono text-sm text-muted-foreground">{producto.codigo}</TableCell>
                     <TableCell className="font-medium">{producto.nombre}</TableCell>

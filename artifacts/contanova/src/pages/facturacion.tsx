@@ -16,6 +16,8 @@ export default function Facturacion() {
   const { data: facturas, isLoading } = useListFacturas({ search });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const safeFacturas = Array.isArray(facturas) ? facturas : [];
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -137,14 +139,14 @@ export default function Facturacion() {
                     <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : facturas?.length === 0 ? (
+              ) : safeFacturas.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                     No se encontraron facturas.
                   </TableCell>
                 </TableRow>
               ) : (
-                facturas?.map((factura) => (
+                safeFacturas.map((factura) => (
                   <TableRow key={factura.id} className="border-border hover:bg-muted/30 transition-colors">
                     <TableCell className="font-mono text-sm font-medium">{factura.numero}</TableCell>
                     <TableCell className="font-medium">{factura.clienteNombre}</TableCell>

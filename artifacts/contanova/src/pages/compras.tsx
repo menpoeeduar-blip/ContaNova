@@ -21,6 +21,8 @@ export default function Compras() {
   const { data: compras, isLoading } = useListCompras({});
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const safeCompras = Array.isArray(compras) ? compras : [];
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -73,14 +75,14 @@ export default function Compras() {
                     <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : compras?.length === 0 ? (
+              ) : safeCompras.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                     No se encontraron órdenes de compra.
                   </TableCell>
                 </TableRow>
               ) : (
-                compras?.map((compra) => (
+                safeCompras.map((compra) => (
                   <TableRow key={compra.id} className="border-border hover:bg-muted/30 transition-colors">
                     <TableCell className="font-mono text-sm font-medium">{compra.numero}</TableCell>
                     <TableCell className="font-medium">{compra.proveedorNombre}</TableCell>

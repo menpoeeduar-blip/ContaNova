@@ -18,6 +18,8 @@ export default function CRM() {
   const { data: stats, isLoading: statsLoading } = useGetCrmStats();
   const { data: oportunidades, isLoading } = useListOportunidades();
 
+  const safeOportunidades = Array.isArray(oportunidades) ? oportunidades : [];
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto h-full flex flex-col">
       <div>
@@ -48,7 +50,7 @@ export default function CRM() {
           <CardContent className="p-6 flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Tasa Conversión</p>
-              {statsLoading ? <Skeleton className="h-8 w-20 mt-1" /> : <h3 className="text-2xl font-bold mt-1 text-green-500">{stats?.tasaConversion.toFixed(1)}%</h3>}
+              {statsLoading ? <Skeleton className="h-8 w-20 mt-1" /> : <h3 className="text-2xl font-bold mt-1 text-green-500">{(stats?.tasaConversion ?? 0).toFixed(1)}%</h3>}
             </div>
             <div className="p-3 bg-green-500/10 rounded-lg text-green-500"><TrendingUp className="w-5 h-5" /></div>
           </CardContent>
@@ -67,7 +69,7 @@ export default function CRM() {
       <div className="flex-1 overflow-x-auto pb-4">
         <div className="flex gap-4 min-w-max h-full min-h-[500px]">
           {STAGES.map(stage => {
-            const cols = oportunidades?.filter(o => o.etapa === stage.id) || [];
+            const cols = safeOportunidades.filter(o => o.etapa === stage.id);
             return (
               <div key={stage.id} className="w-80 flex flex-col gap-3">
                 <div className="flex items-center justify-between bg-muted/50 rounded-t-lg border-b-2 border-b-primary/20 p-3">

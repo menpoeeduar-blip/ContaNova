@@ -63,17 +63,25 @@ function CuentasList() {
   const { data, isLoading } = useListCuentas({});
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const safeData = Array.isArray(data) ? data : [];
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">Plan de Cuentas</h2>
+          <p className="text-sm text-muted-foreground">Catálogo de cuentas contables de la empresa.</p>
+        </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground shadow-sm">
-              <Plus className="h-4 w-4 mr-2" /> Nueva Cuenta
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Nueva Cuenta
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md bg-card border-border">
-            <DialogHeader><DialogTitle>Crear Cuenta Contable</DialogTitle></DialogHeader>
+          <DialogContent className="sm:max-w-[425px] bg-card border-border">
+            <DialogHeader>
+              <DialogTitle>Crear Cuenta Contable</DialogTitle>
+            </DialogHeader>
             <CreateCuentaForm onSuccess={() => setIsCreateOpen(false)} />
           </DialogContent>
         </Dialog>
@@ -92,10 +100,10 @@ function CuentasList() {
             <TableBody>
               {isLoading ? (
                 <TableRow><TableCell colSpan={4} className="text-center h-24"><Skeleton className="w-full h-8" /></TableCell></TableRow>
-              ) : data?.length === 0 ? (
+              ) : safeData.length === 0 ? (
                 <TableRow><TableCell colSpan={4} className="text-center h-24 text-muted-foreground">No hay cuentas creadas.</TableCell></TableRow>
               ) : (
-                data?.map((c) => (
+                safeData.map((c) => (
                   <TableRow key={c.id} className="border-border hover:bg-muted/30">
                     <TableCell className="font-mono text-sm font-bold">{c.codigo}</TableCell>
                     <TableCell className="font-medium">{c.nombre}</TableCell>
@@ -161,25 +169,34 @@ function CreateCuentaForm({ onSuccess }: { onSuccess: () => void }) {
   );
 }
 
-function MovimientosList() {
+function AsientosDiarioList() {
   const { data, isLoading } = useListMovimientos({});
+  const safeData = Array.isArray(data) ? data : [];
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">Libro Diario</h2>
+          <p className="text-sm text-muted-foreground">Registro cronológico de comprobantes y asientos contables.</p>
+        </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground shadow-sm">
-              <Plus className="h-4 w-4 mr-2" /> Nuevo Comprobante
+            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo Comprobante
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[700px] bg-card border-border">
-            <DialogHeader><DialogTitle>Asentar Comprobante Manual</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Crear Comprobante Contable</DialogTitle>
+            </DialogHeader>
             <CreateMovimientoForm onSuccess={() => setIsCreateOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
+
       <Card className="border-border shadow-sm overflow-hidden bg-card">
         <div className="overflow-x-auto">
           <Table>
@@ -187,19 +204,19 @@ function MovimientosList() {
               <TableRow className="border-border">
                 <TableHead>Número</TableHead>
                 <TableHead>Fecha</TableHead>
-                <TableHead>Descripción</TableHead>
+                <TableHead>Concepto / Descripción</TableHead>
                 <TableHead>Tipo</TableHead>
-                <TableHead className="text-right">Débitos</TableHead>
-                <TableHead className="text-right">Créditos</TableHead>
+                <TableHead className="text-right">Débito</TableHead>
+                <TableHead className="text-right">Crédito</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow><TableCell colSpan={6} className="text-center h-24"><Skeleton className="w-full h-8" /></TableCell></TableRow>
-              ) : data?.length === 0 ? (
+              ) : safeData.length === 0 ? (
                 <TableRow><TableCell colSpan={6} className="text-center h-24 text-muted-foreground">No hay comprobantes registrados.</TableCell></TableRow>
               ) : (
-                data?.map((m) => (
+                safeData.map((m) => (
                   <TableRow key={m.id} className="border-border hover:bg-muted/30">
                     <TableCell className="font-mono text-sm font-medium">{m.numero}</TableCell>
                     <TableCell>{new Date(m.fecha + "T12:00:00").toLocaleDateString("es-CO")}</TableCell>

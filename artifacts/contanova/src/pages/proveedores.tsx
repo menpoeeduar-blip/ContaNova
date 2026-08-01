@@ -14,6 +14,8 @@ export default function Proveedores() {
   const { data: proveedores, isLoading } = useListProveedores({ search });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const safeProveedores = Array.isArray(proveedores) ? proveedores : [];
+
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -72,14 +74,14 @@ export default function Proveedores() {
                     <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
                   </TableRow>
                 ))
-              ) : proveedores?.length === 0 ? (
+              ) : safeProveedores.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                     No se encontraron proveedores.
                   </TableCell>
                 </TableRow>
               ) : (
-                proveedores?.map((proveedor) => (
+                safeProveedores.map((proveedor) => (
                   <TableRow key={proveedor.id} className="border-border hover:bg-muted/30 transition-colors">
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
