@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "pnpm --filter @workspace/api-server run build",
+  "outputDirectory": "artifacts/api-server/dist",
   "rewrites": [
     {
       "source": "/api/(.*)",
