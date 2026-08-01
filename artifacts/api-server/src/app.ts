@@ -39,6 +39,9 @@ app.use((req, res, next) => {
     res.sendStatus(200);
     return;
   }
+  if (req.url.startsWith("/api/")) {
+    req.url = req.url.replace("/api/", "/");
+  }
   next();
 });
 app.use(cors());
