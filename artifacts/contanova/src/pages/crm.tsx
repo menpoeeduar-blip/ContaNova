@@ -19,7 +19,7 @@ export default function CRM() {
   const { data: oportunidades, isLoading } = useListOportunidades();
 
   return (
-    <div className="p-8 space-y-6 max-w-[1600px] mx-auto h-full flex flex-col">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-[1600px] mx-auto h-full flex flex-col">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">CRM & Ventas</h1>
         <p className="text-muted-foreground mt-1">Pipeline comercial y seguimiento de oportunidades.</p>

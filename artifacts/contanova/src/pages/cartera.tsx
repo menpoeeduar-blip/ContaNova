@@ -16,7 +16,7 @@ export default function Cartera() {
   const [tab, setTab] = useState("cobrar");
 
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Cartera</h1>
         <p className="text-muted-foreground mt-1">Gestión de cuentas por cobrar y pagar.</p>

@@ -15,8 +15,10 @@ export default function Clientes() {
   const { data: clientes, isLoading } = useListClientes({ search });
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const safeClientes = Array.isArray(clientes) ? clientes : [];
+
   return (
-    <div className="p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
@@ -75,14 +77,14 @@ export default function Clientes() {
                     <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
                   </TableRow>
                 ))
-              ) : clientes?.length === 0 ? (
+              ) : safeClientes.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                     No se encontraron clientes.
                   </TableCell>
                 </TableRow>
               ) : (
-                clientes?.map((cliente) => (
+                safeClientes.map((cliente) => (
                   <TableRow key={cliente.id} className="border-border hover:bg-muted/30 transition-colors">
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">

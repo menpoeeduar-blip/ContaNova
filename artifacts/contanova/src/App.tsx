@@ -18,9 +18,64 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, type User } from "firebase/auth";
+import { Component, type ReactNode } from "react";
 
-const queryClient = new QueryClient();
+// ─── Error Boundary ────────────────────────────────────────────────────────────
+class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: string }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: "" };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #0f0c29, #302b63)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          flexDirection: "column", gap: "12px", padding: "20px",
+          fontFamily: "Inter, sans-serif",
+        }}>
+          <div style={{ fontSize: "48px" }}>⚠️</div>
+          <h2 style={{ color: "#fff", fontSize: "20px", margin: 0 }}>Error al cargar la página</h2>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "13px", margin: 0, textAlign: "center", maxWidth: "300px" }}>
+            {this.state.error}
+          </p>
+          <button
+            onClick={() => this.setState({ hasError: false, error: "" })}
+            style={{
+              marginTop: "8px", padding: "10px 24px", borderRadius: "8px",
+              background: "#6366f1", color: "#fff", border: "none",
+              cursor: "pointer", fontSize: "14px", fontWeight: "600",
+            }}
+          >
+            Reintentar
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
+// ─── Query Client ───────────────────────────────────────────────────────────────
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
+
+// ─── Router ─────────────────────────────────────────────────────────────────────
 function Router() {
   return (
     <Layout>
@@ -41,6 +96,7 @@ function Router() {
   );
 }
 
+// ─── App ────────────────────────────────────────────────────────────────────────
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,18 +133,20 @@ function App() {
   }
 
   if (!user) {
-    return <Login onLogin={() => {}} />;
+    return <ErrorBoundary><Login onLogin={() => {}} /></ErrorBoundary>;
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

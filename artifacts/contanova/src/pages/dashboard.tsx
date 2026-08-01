@@ -11,14 +11,18 @@ export default function Dashboard() {
   const { data: topProductos, isLoading: topProductosLoading } = useGetTopProductos();
   const { data: flujoCaja, isLoading: flujoCajaLoading } = useGetFlujoCaja();
 
+  const safeVentasMensuales = Array.isArray(ventasMensuales) ? ventasMensuales : [];
+  const safeTopProductos = Array.isArray(topProductos) ? topProductos : [];
+  const safeFlujoCaja = Array.isArray(flujoCaja) ? flujoCaja : [];
+
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground mt-1">Resumen ejecutivo del estado de la empresa.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard 
           title="Ventas del Mes" 
           value={stats?.ventasMes} 
@@ -75,7 +79,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
         <Card className="bg-card shadow-sm border-border">
           <CardHeader>
             <CardTitle>Ventas Mensuales</CardTitle>
@@ -86,7 +90,7 @@ export default function Dashboard() {
             ) : (
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={ventasMensuales} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <AreaChart data={safeVentasMensuales} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
@@ -118,7 +122,7 @@ export default function Dashboard() {
             ) : (
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={flujoCaja} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <LineChart data={safeFlujoCaja} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                     <XAxis dataKey="fecha" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v/1000000}M`} />
@@ -145,7 +149,7 @@ export default function Dashboard() {
             ) : (
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topProductos} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <BarChart data={safeTopProductos} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                     <XAxis dataKey="nombre" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v/1000000}M`} />

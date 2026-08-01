@@ -102,12 +102,15 @@ export default function DeudoresPage() {
   const [newStatus, setNewStatus] = useState<string>("deudor");
   const [actionNotes, setActionNotes] = useState("");
 
-  const { data: clientes = [], isLoading: isLoadingClientes } = useQuery({
+  const { data: rawClientes = [], isLoading: isLoadingClientes } = useQuery({
     queryKey: ["clientes"],
     queryFn: () => listClientes(),
   });
 
-  const { data: facturas = [] } = useListFacturas();
+  const { data: rawFacturas = [] } = useListFacturas();
+
+  const clientes = Array.isArray(rawClientes) ? rawClientes : [];
+  const facturas = Array.isArray(rawFacturas) ? rawFacturas : [];
 
   const updateMutation = useMutation({
     mutationFn: ({ id, estadoCobranza, notasCobranza }: { id: number; estadoCobranza: string; notasCobranza?: string }) =>
@@ -243,7 +246,7 @@ export default function DeudoresPage() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-800 to-rose-950 p-6 rounded-2xl border border-slate-800 shadow-xl text-white">
         <div className="flex items-center gap-3">
