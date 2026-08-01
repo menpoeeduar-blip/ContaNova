@@ -31,12 +31,17 @@ const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
   : ["http://localhost:5173", "https://menpoe-contanova.web.app", "https://menpoe-contanova.firebaseapp.com"];
 
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  }),
-);
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+    return;
+  }
+  next();
+});
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
