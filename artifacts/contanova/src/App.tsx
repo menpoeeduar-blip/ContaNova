@@ -6,8 +6,8 @@ import { Toaster as SonnerToaster } from "sonner";
 import { setBaseUrl } from "@workspace/api-client-react";
 
 // Configure API base URL for production
-const API_URL = import.meta.env.VITE_API_URL as string | undefined;
-if (API_URL) setBaseUrl(API_URL);
+const API_URL = import.meta.env.VITE_API_URL || "https://conta-nova-api-server.vercel.app";
+setBaseUrl(API_URL);
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Layout } from "@/components/layout";
 import Dashboard from "@/pages/dashboard";
