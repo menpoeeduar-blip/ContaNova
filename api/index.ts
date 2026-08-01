@@ -1,4 +1,5 @@
-import app from "../../artifacts/api-server/src/app";
+import app from "../artifacts/api-server/src/app";
 
-// Vercel serverless handler — exposes the Express app
-export default app;
+export default function handler(req: any, res: any) {
+  return app(req, res);
+}
