@@ -33,7 +33,7 @@ const corsOrigins = process.env.CORS_ORIGIN
 
 app.use(
   cors({
-    origin: corsOrigins,
+    origin: true,
     credentials: true,
   }),
 );
@@ -41,5 +41,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+app.use("/", router);
 
 export default app;
