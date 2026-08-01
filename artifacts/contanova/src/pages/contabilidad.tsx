@@ -51,7 +51,7 @@ export default function Contabilidad() {
             <CuentasList />
           </TabsContent>
           <TabsContent value="movimientos">
-            <MovimientosList />
+            <AsientosDiarioList />
           </TabsContent>
         </div>
       </Tabs>
