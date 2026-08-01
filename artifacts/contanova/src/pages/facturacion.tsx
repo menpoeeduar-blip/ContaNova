@@ -184,6 +184,7 @@ export default function Facturacion() {
 function CreateFacturaForm({ onSuccess }: { onSuccess: () => void }) {
   const createMutation = useCreateFactura();
   const { data: clientes } = useListClientes({});
+  const safeClientes = Array.isArray(clientes) ? clientes : [];
   const [formData, setFormData] = useState({
     clienteId: 0,
     fecha: new Date().toISOString().split("T")[0],
@@ -224,7 +225,7 @@ function CreateFacturaForm({ onSuccess }: { onSuccess: () => void }) {
             onChange={(e) => setFormData({ ...formData, clienteId: Number(e.target.value) })}
           >
             <option value="">-- Seleccionar cliente --</option>
-            {clientes?.map((c) => (
+            {safeClientes.map((c) => (
               <option key={c.id} value={c.id}>{c.nombre} ({c.tipoDocumento} {c.numeroDocumento})</option>
             ))}
           </select>

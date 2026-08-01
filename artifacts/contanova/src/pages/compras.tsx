@@ -122,6 +122,7 @@ export default function Compras() {
 function CreateCompraForm({ onSuccess }: { onSuccess: () => void }) {
   const createMutation = useCreateCompra();
   const { data: proveedores } = useListProveedores({});
+  const safeProveedores = Array.isArray(proveedores) ? proveedores : [];
   const [formData, setFormData] = useState({
     proveedorId: 0,
     fecha: new Date().toISOString().split("T")[0],
@@ -162,7 +163,7 @@ function CreateCompraForm({ onSuccess }: { onSuccess: () => void }) {
             onChange={(e) => setFormData({ ...formData, proveedorId: Number(e.target.value) })}
           >
             <option value="">-- Seleccionar proveedor --</option>
-            {proveedores?.map((p) => (
+            {safeProveedores.map((p) => (
               <option key={p.id} value={p.id}>{p.nombre} ({p.tipoDocumento} {p.numeroDocumento})</option>
             ))}
           </select>

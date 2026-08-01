@@ -238,6 +238,7 @@ function AsientosDiarioList() {
 function CreateMovimientoForm({ onSuccess }: { onSuccess: () => void }) {
   const createMutation = useCreateMovimiento();
   const { data: cuentas } = useListCuentas({});
+  const safeCuentas = Array.isArray(cuentas) ? cuentas : [];
   const [formData, setFormData] = useState({
     tipo: "Comprobante Diario",
     fecha: new Date().toISOString().split("T")[0],
@@ -326,7 +327,7 @@ function CreateMovimientoForm({ onSuccess }: { onSuccess: () => void }) {
                 }}
               >
                 <option value="">-- Cuenta --</option>
-                {cuentas?.map((c) => (
+                {safeCuentas.map((c) => (
                   <option key={c.id} value={c.id}>{c.codigo} - {c.nombre}</option>
                 ))}
               </select>
