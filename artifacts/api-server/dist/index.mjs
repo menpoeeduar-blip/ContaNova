@@ -57955,35 +57955,41 @@ app.use(
   })
 );
 var corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim()) : ["http://localhost:5173", "https://menpoe-contanova.web.app", "https://menpoe-contanova.firebaseapp.com"];
-app.use(
-  (0, import_cors.default)({
-    origin: corsOrigins,
-    credentials: true
-  })
-);
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+  if (req.method === "OPTIONS") {
+    res.sendStatus(200);
+    return;
+  }
+  if (req.url.startsWith("/api/")) {
+    req.url = req.url.replace("/api/", "/");
+  }
+  next();
+});
+app.use((0, import_cors.default)());
 app.use(import_express12.default.json());
 app.use(import_express12.default.urlencoded({ extended: true }));
 app.use("/api", routes_default);
+app.use("/", routes_default);
 var app_default = app;
 
 // src/index.ts
-var rawPort = process.env["PORT"];
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided."
-  );
+var port = Number(process.env["PORT"] || 8080);
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+  app_default.listen(port, (err) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
+    logger.info({ port }, "Server listening");
+  });
 }
-var port = Number(rawPort);
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
-app_default.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
-  logger.info({ port }, "Server listening");
-});
+var src_default = app_default;
+export {
+  src_default as default
+};
 /*! Bundled license information:
 
 depd/index.js:
