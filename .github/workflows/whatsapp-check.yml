@@ -1,0 +1,28 @@
+name: Deploy WhatsApp gateway hint
+
+# Render se despliega desde el dashboard con Blueprint (render.yaml).
+# Este workflow solo verifica que el paquete whatsapp-server esté sano en cada push.
+
+on:
+  push:
+    paths:
+      - "artifacts/whatsapp-server/**"
+      - "render.yaml"
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: artifacts/whatsapp-server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install
+      - run: node --check src/index.js
+      - run: node --check src/whatsapp.js
+      - run: node --check src/queue.js
+      - run: node --check src/auth-pg.js

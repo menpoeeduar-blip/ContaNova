@@ -20,6 +20,7 @@ import Facturacion from "@/pages/facturacion";
 import Compras from "@/pages/compras";
 import Contabilidad from "@/pages/contabilidad";
 import Deudores from "@/pages/deudores";
+import Recordatorios from "@/pages/recordatorios";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import { auth } from "@/lib/firebase";
@@ -89,6 +90,7 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/clientes" component={Clientes} />
         <Route path="/deudores" component={Deudores} />
+        <Route path="/recordatorios" component={Recordatorios} />
         <Route path="/proveedores" component={Proveedores} />
         <Route path="/productos" component={Productos} />
         <Route path="/cartera" component={Cartera} />
@@ -150,6 +152,7 @@ function App() {
             <Router />
           </WouterRouter>
           <Toaster />
+          <SonnerToaster richColors position="top-right" />
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

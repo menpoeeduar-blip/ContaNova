@@ -1,19 +1,27 @@
+# ContaNova — solo gateway WhatsApp (Baileys).
+# La API CRUD sigue en Vercel; el frontend en Firebase Hosting.
+# Baileys requiere proceso Node persistente (no serverless).
+
 services:
   - type: web
-    name: contanova-api
+    name: contanova-whatsapp
     runtime: node
     region: oregon
     plan: free
-    buildCommand: pnpm install && pnpm run build:api
-    startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
+    rootDir: artifacts/whatsapp-server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/healthz
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 8080
       - key: DATABASE_URL
-        sync: false  # Set this manually in Render dashboard
-      - key: CORS_ORIGIN
-        value: "https://menpoe-contanova.web.app,https://menpoe-contanova.firebaseapp.com"
-    autoDeploy: true
-    healthCheckPath: /api/healthz
+        sync: false
+      - key: WA_DELAY_MIN_MS
+        value: "4000"
+      - key: WA_DELAY_MAX_MS
+        value: "9000"
+      - key: WA_SESSION_ID
+        value: production
+      - key: LOG_LEVEL
+        value: info

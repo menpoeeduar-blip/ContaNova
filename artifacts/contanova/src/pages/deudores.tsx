@@ -46,6 +46,8 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { WhatsAppConnectPanel } from "@/components/whatsapp-connect";
+import { sendWhatsAppBulk, sendWhatsAppOne, getWhatsAppStatus } from "@/lib/whatsapp";
 
 function formatCurrency(val: number) {
   return new Intl.NumberFormat("es-CO", {
@@ -101,6 +103,8 @@ export default function DeudoresPage() {
   const [actionModalOpen, setActionModalOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<string>("deudor");
   const [actionNotes, setActionNotes] = useState("");
+  const [bulkDelaySec, setBulkDelaySec] = useState(6);
+  const [sendingBulk, setSendingBulk] = useState(false);
 
   const { data: rawClientes = [], isLoading: isLoadingClientes } = useQuery({
     queryKey: ["clientes"],
@@ -201,24 +205,62 @@ export default function DeudoresPage() {
       .replace(/{dias_mora}/g, String(info.diasMora));
   };
 
-  const sendWhatsApp = (cliente: Cliente) => {
+  const sendWhatsApp = async (cliente: Cliente) => {
     if (!cliente.telefono) {
       toast.error(`${cliente.nombre} no tiene número de teléfono registrado.`);
       return;
     }
+    const msg = replaceVariables(customMessage, cliente);
+    try {
+      const st = await getWhatsAppStatus();
+      if (st.connected) {
+        await sendWhatsAppOne(cliente.telefono, msg);
+        toast.success(`Mensaje enviado a ${cliente.nombre}`);
+        return;
+      }
+    } catch {
+      // fallback a wa.me si el gateway no está disponible
+    }
     const clean = cliente.telefono.replace(/\D/g, "");
     const phone = clean.startsWith("57") ? clean : `57${clean}`;
-    const msg = replaceVariables(customMessage, cliente);
     window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`, "_blank");
   };
 
-  const sendBulkWhatsApp = () => {
+  const sendBulkWhatsApp = async () => {
     if (clientesSeleccionados.length === 0) {
       toast.warning("Selecciona al menos un cliente.");
       return;
     }
-    toast.info(`Iniciando envío a ${clientesSeleccionados.length} contactos por WhatsApp...`);
-    clientesSeleccionados.forEach((c, i) => setTimeout(() => sendWhatsApp(c), i * 1200));
+    const withPhone = clientesSeleccionados.filter((c) => c.telefono);
+    if (withPhone.length === 0) {
+      toast.error("Ningún seleccionado tiene teléfono.");
+      return;
+    }
+    try {
+      setSendingBulk(true);
+      const st = await getWhatsAppStatus();
+      if (!st.connected) {
+        toast.error("WhatsApp no está conectado. Escanea el QR en esta pestaña.");
+        return;
+      }
+      const items = withPhone.map((c) => ({
+        phone: c.telefono!,
+        message: replaceVariables(customMessage, c),
+      }));
+      const delayMs = Math.max(3000, bulkDelaySec * 1000);
+      const result = await sendWhatsAppBulk({
+        items,
+        delayMs,
+        campaignId: `cobranza-${Date.now()}`,
+      });
+      toast.success(
+        `${result.enqueued} mensajes en cola (~${Math.round(result.delayMs / 1000)}s entre cada uno)`
+      );
+    } catch (e: any) {
+      toast.error(e?.message || "No se pudo encolar el envío masivo");
+    } finally {
+      setSendingBulk(false);
+    }
   };
 
   const sendEmail = (cliente: Cliente) => {
@@ -427,6 +469,7 @@ export default function DeudoresPage() {
 
         {/* TAB: MENSAJERIA MASIVA */}
         <TabsContent value="mensajeria" className="space-y-4 mt-4">
+          <WhatsAppConnectPanel compact />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Configuración */}
             <Card className="md:col-span-1 border-slate-800 bg-slate-900/60">
@@ -453,9 +496,29 @@ export default function DeudoresPage() {
                     Variables: <code className="text-indigo-400">&#123;nombre_cliente&#125;</code> <code className="text-indigo-400">&#123;nit_cedula&#125;</code> <code className="text-indigo-400">&#123;monto_deuda&#125;</code> <code className="text-indigo-400">&#123;dias_mora&#125;</code>
                   </p>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-300">
+                    Intervalo entre mensajes (segundos, anti-ban)
+                  </label>
+                  <Input
+                    type="number"
+                    min={3}
+                    max={60}
+                    className="bg-slate-950 border-slate-800"
+                    value={bulkDelaySec}
+                    onChange={(e) => setBulkDelaySec(Number(e.target.value) || 6)}
+                  />
+                </div>
                 <div className="pt-2 border-t border-slate-800 space-y-2">
-                  <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold" onClick={sendBulkWhatsApp} disabled={selectedClientIds.length === 0}>
-                    <MessageSquare className="w-4 h-4 mr-2" />WhatsApp Masivo ({selectedClientIds.length})
+                  <Button
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                    onClick={sendBulkWhatsApp}
+                    disabled={selectedClientIds.length === 0 || sendingBulk}
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    {sendingBulk
+                      ? "Encolando..."
+                      : `WhatsApp Masivo Baileys (${selectedClientIds.length})`}
                   </Button>
                   <Button variant="outline" className="w-full border-slate-700 bg-slate-950 text-slate-200 hover:bg-slate-800" onClick={sendBulkEmail} disabled={selectedClientIds.length === 0}>
                     <Mail className="w-4 h-4 mr-2" />Correo Masivo ({selectedClientIds.length})

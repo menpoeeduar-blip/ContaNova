@@ -1,22 +1,48 @@
 import { useState } from "react";
-import { useListProductos, useGetInventarioStats, useCreateProducto } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useListProductos,
+  useGetInventarioStats,
+  useCreateProducto,
+  useUpdateProducto,
+  useDeleteProducto,
+  getListProductosQueryKey,
+  getGetInventarioStatsQueryKey,
+  type Producto,
+} from "@workspace/api-client-react";
 import { formatCurrency, formatNumber } from "@/lib/format";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, AlertTriangle, PackageOpen, Layers, DollarSign } from "lucide-react";
+import { Plus, Search, AlertTriangle, PackageOpen, Layers, DollarSign, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
+const selectClass =
+  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
 export default function Productos() {
   const [search, setSearch] = useState("");
+  const queryClient = useQueryClient();
   const { data: stats, isLoading: statsLoading } = useGetInventarioStats();
-  const { data: productos, isLoading } = useListProductos({ search });
+  const { data: productos, isLoading, refetch } = useListProductos({ search });
+  const deleteMutation = useDeleteProducto();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-
+  const [editing, setEditing] = useState<Producto | null>(null);
   const safeProductos = Array.isArray(productos) ? productos : [];
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getListProductosQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetInventarioStatsQueryKey() });
+    refetch();
+  };
+
+  const handleDelete = (p: Producto) => {
+    if (!confirm(`¿Desactivar el producto "${p.nombre}"?`)) return;
+    deleteMutation.mutate({ id: p.id }, { onSuccess: () => invalidate() });
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -59,7 +85,7 @@ export default function Productos() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-destructive/5 border-destructive/20 shadow-sm relative overflow-hidden group">
+        <Card className="bg-destructive/5 border-destructive/20 shadow-sm">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
               <div>
@@ -75,9 +101,9 @@ export default function Productos() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="relative w-full sm:w-80">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-            type="search" 
-            placeholder="Buscar por código o nombre..." 
+          <Input
+            type="search"
+            placeholder="Buscar por código o nombre..."
             className="pl-9 bg-card border-border"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -94,10 +120,32 @@ export default function Productos() {
             <DialogHeader>
               <DialogTitle>Añadir Producto al Catálogo</DialogTitle>
             </DialogHeader>
-            <CreateProductoForm onSuccess={() => setIsCreateOpen(false)} />
+            <ProductoForm
+              onSuccess={() => {
+                setIsCreateOpen(false);
+                invalidate();
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="sm:max-w-[500px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>Editar Producto</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <ProductoForm
+              producto={editing}
+              onSuccess={() => {
+                setEditing(null);
+                invalidate();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Card className="border-border shadow-sm overflow-hidden bg-card">
         <div className="overflow-x-auto">
@@ -110,6 +158,7 @@ export default function Productos() {
                 <TableHead className="text-right">Precio Venta</TableHead>
                 <TableHead className="text-right">Stock</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -122,11 +171,12 @@ export default function Productos() {
                     <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-4 w-[40px] ml-auto" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+                    <TableCell />
                   </TableRow>
                 ))
               ) : safeProductos.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
                     No se encontraron productos.
                   </TableCell>
                 </TableRow>
@@ -138,23 +188,44 @@ export default function Productos() {
                     <TableCell>
                       {producto.categoria ? (
                         <Badge variant="outline" className="bg-secondary/50 text-secondary-foreground">{producto.categoria}</Badge>
-                      ) : <span className="text-muted-foreground">-</span>}
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right font-medium">{formatCurrency(producto.precioVenta)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {producto.stockMinimo && producto.stock <= producto.stockMinimo && (
+                        {producto.stockMinimo != null && producto.stock <= producto.stockMinimo && (
                           <AlertTriangle className="w-4 h-4 text-destructive" />
                         )}
-                        <span className={producto.stockMinimo && producto.stock <= producto.stockMinimo ? "text-destructive font-bold" : ""}>
+                        <span className={producto.stockMinimo != null && producto.stock <= producto.stockMinimo ? "text-destructive font-bold" : ""}>
                           {formatNumber(producto.stock)} {producto.unidad}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={producto.activo ? "default" : "secondary"} className={producto.activo ? "bg-green-500/10 text-green-500 hover:bg-green-500/20" : ""}>
+                      <Badge
+                        variant={producto.activo ? "default" : "secondary"}
+                        className={producto.activo ? "bg-green-500/10 text-green-500 hover:bg-green-500/20" : ""}
+                      >
                         {producto.activo ? "Activo" : "Inactivo"}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => setEditing(producto)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(producto)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -167,25 +238,30 @@ export default function Productos() {
   );
 }
 
-function CreateProductoForm({ onSuccess }: { onSuccess: () => void }) {
+function ProductoForm({ producto, onSuccess }: { producto?: Producto; onSuccess: () => void }) {
   const createMutation = useCreateProducto();
+  const updateMutation = useUpdateProducto();
+  const isEdit = !!producto;
   const [formData, setFormData] = useState({
-    codigo: "",
-    nombre: "",
-    categoria: "",
-    unidad: "UND",
-    precioVenta: 0,
-    precioCosto: 0,
-    stock: 0,
-    stockMinimo: 0,
+    codigo: producto?.codigo || "",
+    nombre: producto?.nombre || "",
+    categoria: producto?.categoria || "",
+    unidad: producto?.unidad || "UND",
+    precioVenta: producto?.precioVenta ?? 0,
+    precioCosto: producto?.precioCosto ?? 0,
+    stock: producto?.stock ?? 0,
+    stockMinimo: producto?.stockMinimo ?? 0,
+    activo: producto?.activo ?? true,
   });
+  const pending = createMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate(
-      { data: formData },
-      { onSuccess: () => onSuccess() }
-    );
+    if (isEdit && producto) {
+      updateMutation.mutate({ id: producto.id, data: formData }, { onSuccess });
+    } else {
+      createMutation.mutate({ data: formData }, { onSuccess });
+    }
   };
 
   return (
@@ -193,19 +269,19 @@ function CreateProductoForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-3 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Código</label>
-          <Input 
-            required 
-            value={formData.codigo} 
-            onChange={(e) => setFormData({...formData, codigo: e.target.value})}
+          <Input
+            required
+            value={formData.codigo}
+            onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
             className="bg-background uppercase"
           />
         </div>
         <div className="space-y-2 col-span-2">
           <label className="text-sm font-medium">Nombre de Producto</label>
-          <Input 
-            required 
-            value={formData.nombre} 
-            onChange={(e) => setFormData({...formData, nombre: e.target.value})} 
+          <Input
+            required
+            value={formData.nombre}
+            onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
             className="bg-background"
           />
         </div>
@@ -213,17 +289,17 @@ function CreateProductoForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Categoría</label>
-          <Input 
-            value={formData.categoria} 
-            onChange={(e) => setFormData({...formData, categoria: e.target.value})}
+          <Input
+            value={formData.categoria || ""}
+            onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
             className="bg-background"
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Unidad de Medida</label>
-          <Input 
-            value={formData.unidad} 
-            onChange={(e) => setFormData({...formData, unidad: e.target.value})}
+          <Input
+            value={formData.unidad}
+            onChange={(e) => setFormData({ ...formData, unidad: e.target.value })}
             className="bg-background"
           />
         </div>
@@ -231,47 +307,67 @@ function CreateProductoForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Precio Venta (COP)</label>
-          <Input 
-            type="number" required min="0"
-            value={formData.precioVenta || ""} 
-            onChange={(e) => setFormData({...formData, precioVenta: Number(e.target.value)})}
+          <Input
+            type="number"
+            required
+            min="0"
+            value={formData.precioVenta || ""}
+            onChange={(e) => setFormData({ ...formData, precioVenta: Number(e.target.value) })}
             className="bg-background"
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Precio Costo (COP)</label>
-          <Input 
-            type="number" min="0"
-            value={formData.precioCosto || ""} 
-            onChange={(e) => setFormData({...formData, precioCosto: Number(e.target.value)})}
+          <Input
+            type="number"
+            min="0"
+            value={formData.precioCosto || ""}
+            onChange={(e) => setFormData({ ...formData, precioCosto: Number(e.target.value) })}
             className="bg-background"
           />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Stock Inicial</label>
-          <Input 
-            type="number" min="0"
-            value={formData.stock || ""} 
-            onChange={(e) => setFormData({...formData, stock: Number(e.target.value)})}
+          <label className="text-sm font-medium">Stock</label>
+          <Input
+            type="number"
+            min="0"
+            value={formData.stock || ""}
+            onChange={(e) => setFormData({ ...formData, stock: Number(e.target.value) })}
             className="bg-background"
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Stock Mínimo</label>
-          <Input 
-            type="number" min="0"
-            value={formData.stockMinimo || ""} 
-            onChange={(e) => setFormData({...formData, stockMinimo: Number(e.target.value)})}
+          <Input
+            type="number"
+            min="0"
+            value={formData.stockMinimo || ""}
+            onChange={(e) => setFormData({ ...formData, stockMinimo: Number(e.target.value) })}
             className="bg-background"
           />
         </div>
       </div>
+      {isEdit && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Estado</label>
+          <select
+            className={selectClass}
+            value={formData.activo ? "true" : "false"}
+            onChange={(e) => setFormData({ ...formData, activo: e.target.value === "true" })}
+          >
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+          </select>
+        </div>
+      )}
       <div className="pt-4 flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onSuccess}>Cancelar</Button>
-        <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending ? "Guardando..." : "Crear Producto"}
+        <Button type="button" variant="outline" onClick={onSuccess}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={pending}>
+          {pending ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear Producto"}
         </Button>
       </div>
     </form>

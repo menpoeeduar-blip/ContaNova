@@ -1,20 +1,43 @@
 import { useState } from "react";
-import { useListProveedores, useCreateProveedor } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useListProveedores,
+  useCreateProveedor,
+  useUpdateProveedor,
+  useDeleteProveedor,
+  getListProveedoresQueryKey,
+  type Proveedor,
+} from "@workspace/api-client-react";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, Mail, Phone, MapPin, Building } from "lucide-react";
+import { Plus, Search, Mail, Phone, MapPin, Building, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
+const selectClass =
+  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
 export default function Proveedores() {
   const [search, setSearch] = useState("");
-  const { data: proveedores, isLoading } = useListProveedores({ search });
+  const queryClient = useQueryClient();
+  const { data: proveedores, isLoading, refetch } = useListProveedores({ search });
+  const deleteMutation = useDeleteProveedor();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-
+  const [editing, setEditing] = useState<Proveedor | null>(null);
   const safeProveedores = Array.isArray(proveedores) ? proveedores : [];
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: getListProveedoresQueryKey() });
+    refetch();
+  };
+
+  const handleDelete = (p: Proveedor) => {
+    if (!confirm(`¿Desactivar el proveedor "${p.nombre}"?`)) return;
+    deleteMutation.mutate({ id: p.id }, { onSuccess: () => invalidate() });
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -26,9 +49,9 @@ export default function Proveedores() {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              type="search" 
-              placeholder="Buscar proveedor..." 
+            <Input
+              type="search"
+              placeholder="Buscar proveedor..."
               className="pl-9 bg-card border-border"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -45,11 +68,33 @@ export default function Proveedores() {
               <DialogHeader>
                 <DialogTitle>Crear Proveedor</DialogTitle>
               </DialogHeader>
-              <CreateProveedorForm onSuccess={() => setIsCreateOpen(false)} />
+              <ProveedorForm
+                onSuccess={() => {
+                  setIsCreateOpen(false);
+                  invalidate();
+                }}
+              />
             </DialogContent>
           </Dialog>
         </div>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="sm:max-w-[425px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>Editar Proveedor</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <ProveedorForm
+              proveedor={editing}
+              onSuccess={() => {
+                setEditing(null);
+                invalidate();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Card className="border-border shadow-sm overflow-hidden bg-card">
         <div className="overflow-x-auto">
@@ -61,6 +106,7 @@ export default function Proveedores() {
                 <TableHead>Contacto</TableHead>
                 <TableHead>Ubicación</TableHead>
                 <TableHead>Estado</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -72,11 +118,12 @@ export default function Proveedores() {
                     <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
                     <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
+                    <TableCell />
                   </TableRow>
                 ))
               ) : safeProveedores.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                     No se encontraron proveedores.
                   </TableCell>
                 </TableRow>
@@ -96,20 +143,55 @@ export default function Proveedores() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col text-sm">
-                        {proveedor.email && <span className="flex items-center text-muted-foreground"><Mail className="w-3 h-3 mr-1"/> {proveedor.email}</span>}
-                        {proveedor.telefono && <span className="flex items-center text-muted-foreground"><Phone className="w-3 h-3 mr-1"/> {proveedor.telefono}</span>}
+                        {proveedor.email && (
+                          <span className="flex items-center text-muted-foreground">
+                            <Mail className="w-3 h-3 mr-1" /> {proveedor.email}
+                          </span>
+                        )}
+                        {proveedor.telefono && (
+                          <span className="flex items-center text-muted-foreground">
+                            <Phone className="w-3 h-3 mr-1" /> {proveedor.telefono}
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col text-sm">
-                        {proveedor.ciudad && <span className="flex items-center text-muted-foreground"><Building className="w-3 h-3 mr-1"/> {proveedor.ciudad}</span>}
-                        {proveedor.direccion && <span className="flex items-center text-muted-foreground"><MapPin className="w-3 h-3 mr-1"/> {proveedor.direccion}</span>}
+                        {proveedor.ciudad && (
+                          <span className="flex items-center text-muted-foreground">
+                            <Building className="w-3 h-3 mr-1" /> {proveedor.ciudad}
+                          </span>
+                        )}
+                        {proveedor.direccion && (
+                          <span className="flex items-center text-muted-foreground">
+                            <MapPin className="w-3 h-3 mr-1" /> {proveedor.direccion}
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={proveedor.activo ? "default" : "secondary"} className={proveedor.activo ? "bg-green-500/10 text-green-500 hover:bg-green-500/20" : ""}>
+                      <Badge
+                        variant={proveedor.activo ? "default" : "secondary"}
+                        className={proveedor.activo ? "bg-green-500/10 text-green-500 hover:bg-green-500/20" : ""}
+                      >
                         {proveedor.activo ? "Activo" : "Inactivo"}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => setEditing(proveedor)}>
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(proveedor)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -122,45 +204,49 @@ export default function Proveedores() {
   );
 }
 
-function CreateProveedorForm({ onSuccess }: { onSuccess: () => void }) {
+function ProveedorForm({ proveedor, onSuccess }: { proveedor?: Proveedor; onSuccess: () => void }) {
   const createMutation = useCreateProveedor();
+  const updateMutation = useUpdateProveedor();
+  const isEdit = !!proveedor;
   const [formData, setFormData] = useState({
-    nombre: "",
-    tipoDocumento: "NIT",
-    numeroDocumento: "",
-    email: "",
-    telefono: "",
-    direccion: "",
-    ciudad: ""
+    nombre: proveedor?.nombre || "",
+    tipoDocumento: proveedor?.tipoDocumento || "NIT",
+    numeroDocumento: proveedor?.numeroDocumento || "",
+    email: proveedor?.email || "",
+    telefono: proveedor?.telefono || "",
+    direccion: proveedor?.direccion || "",
+    ciudad: proveedor?.ciudad || "",
+    activo: proveedor?.activo ?? true,
   });
+  const pending = createMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate(
-      { data: formData },
-      { onSuccess: () => onSuccess() }
-    );
+    if (isEdit && proveedor) {
+      updateMutation.mutate({ id: proveedor.id, data: formData }, { onSuccess });
+    } else {
+      createMutation.mutate({ data: formData }, { onSuccess });
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
       <div className="space-y-2">
         <label className="text-sm font-medium">Nombre / Razón Social</label>
-        <Input 
-          required 
-          value={formData.nombre} 
-          onChange={(e) => setFormData({...formData, nombre: e.target.value})} 
-          placeholder="Ej: Distribuidora Nacional"
+        <Input
+          required
+          value={formData.nombre}
+          onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
           className="bg-background"
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Tipo Doc</label>
-          <select 
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          <select
+            className={selectClass}
             value={formData.tipoDocumento}
-            onChange={(e) => setFormData({...formData, tipoDocumento: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, tipoDocumento: e.target.value })}
           >
             <option value="NIT">NIT</option>
             <option value="CC">CC</option>
@@ -169,10 +255,10 @@ function CreateProveedorForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Número</label>
-          <Input 
-            required 
-            value={formData.numeroDocumento} 
-            onChange={(e) => setFormData({...formData, numeroDocumento: e.target.value})}
+          <Input
+            required
+            value={formData.numeroDocumento}
+            onChange={(e) => setFormData({ ...formData, numeroDocumento: e.target.value })}
             className="bg-background"
           />
         </div>
@@ -180,18 +266,18 @@ function CreateProveedorForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Email</label>
-          <Input 
-            type="email" 
-            value={formData.email} 
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
+          <Input
+            type="email"
+            value={formData.email || ""}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             className="bg-background"
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Teléfono</label>
-          <Input 
-            value={formData.telefono} 
-            onChange={(e) => setFormData({...formData, telefono: e.target.value})}
+          <Input
+            value={formData.telefono || ""}
+            onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
             className="bg-background"
           />
         </div>
@@ -199,25 +285,40 @@ function CreateProveedorForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Ciudad</label>
-          <Input 
-            value={formData.ciudad} 
-            onChange={(e) => setFormData({...formData, ciudad: e.target.value})}
+          <Input
+            value={formData.ciudad || ""}
+            onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
             className="bg-background"
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Dirección</label>
-          <Input 
-            value={formData.direccion} 
-            onChange={(e) => setFormData({...formData, direccion: e.target.value})}
+          <Input
+            value={formData.direccion || ""}
+            onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
             className="bg-background"
           />
         </div>
       </div>
+      {isEdit && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Estado</label>
+          <select
+            className={selectClass}
+            value={formData.activo ? "true" : "false"}
+            onChange={(e) => setFormData({ ...formData, activo: e.target.value === "true" })}
+          >
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+          </select>
+        </div>
+      )}
       <div className="pt-4 flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onSuccess}>Cancelar</Button>
-        <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending ? "Guardando..." : "Crear Proveedor"}
+        <Button type="button" variant="outline" onClick={onSuccess}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={pending}>
+          {pending ? "Guardando..." : isEdit ? "Guardar cambios" : "Crear Proveedor"}
         </Button>
       </div>
     </form>

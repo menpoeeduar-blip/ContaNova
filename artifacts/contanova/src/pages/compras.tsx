@@ -1,12 +1,19 @@
 import { useState } from "react";
-import { useListCompras, useCreateCompra, useListProveedores } from "@workspace/api-client-react";
+import {
+  useListCompras,
+  useCreateCompra,
+  useUpdateCompra,
+  useDeleteCompra,
+  useListProveedores,
+  type Compra,
+} from "@workspace/api-client-react";
 import { formatCurrency } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, ShoppingCart } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
@@ -17,11 +24,21 @@ const ESTADO_LABEL: Record<string, string> = {
   anulada: "Anulada",
 };
 
-export default function Compras() {
-  const { data: compras, isLoading } = useListCompras({});
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+const selectClass =
+  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
+export default function Compras() {
+  const { data: compras, isLoading, refetch } = useListCompras({});
+  const deleteMutation = useDeleteCompra();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<Compra | null>(null);
   const safeCompras = Array.isArray(compras) ? compras : [];
+
+  const handleAnular = (c: Compra) => {
+    if (c.estado === "anulada") return;
+    if (!confirm(`¿Anular la orden ${c.numero}?`)) return;
+    deleteMutation.mutate({ id: c.id }, { onSuccess: () => refetch() });
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -42,11 +59,33 @@ export default function Compras() {
               <DialogHeader>
                 <DialogTitle>Crear Orden de Compra</DialogTitle>
               </DialogHeader>
-              <CreateCompraForm onSuccess={() => setIsCreateOpen(false)} />
+              <CreateCompraForm
+                onSuccess={() => {
+                  setIsCreateOpen(false);
+                  refetch();
+                }}
+              />
             </DialogContent>
           </Dialog>
         </div>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="sm:max-w-[425px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>Editar Orden {editing?.numero}</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <EditCompraForm
+              compra={editing}
+              onSuccess={() => {
+                setEditing(null);
+                refetch();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Card className="border-border shadow-sm overflow-hidden bg-card">
         <div className="overflow-x-auto">
@@ -60,6 +99,7 @@ export default function Compras() {
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-right">Saldo Pendiente</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -73,11 +113,12 @@ export default function Compras() {
                     <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+                    <TableCell />
                   </TableRow>
                 ))
               ) : safeCompras.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                     No se encontraron órdenes de compra.
                   </TableCell>
                 </TableRow>
@@ -93,12 +134,18 @@ export default function Compras() {
                         : "-"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={
-                        compra.estado === "pagada" ? "bg-green-500/10 text-green-500 border-green-500/20" :
-                        compra.estado === "recibida" ? "bg-primary/10 text-primary border-primary/20" :
-                        compra.estado === "anulada" ? "bg-destructive/10 text-destructive border-destructive/20" :
-                        "bg-orange-500/10 text-orange-500 border-orange-500/20"
-                      }>
+                      <Badge
+                        variant="outline"
+                        className={
+                          compra.estado === "pagada"
+                            ? "bg-green-500/10 text-green-500 border-green-500/20"
+                            : compra.estado === "recibida"
+                              ? "bg-primary/10 text-primary border-primary/20"
+                              : compra.estado === "anulada"
+                                ? "bg-destructive/10 text-destructive border-destructive/20"
+                                : "bg-orange-500/10 text-orange-500 border-orange-500/20"
+                        }
+                      >
                         {ESTADO_LABEL[compra.estado] ?? compra.estado}
                       </Badge>
                     </TableCell>
@@ -108,6 +155,27 @@ export default function Compras() {
                         ? formatCurrency(Number(compra.saldoPendiente))
                         : "-"}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          disabled={compra.estado === "anulada"}
+                          onClick={() => setEditing(compra)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          disabled={compra.estado === "anulada" || deleteMutation.isPending}
+                          onClick={() => handleAnular(compra)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -116,6 +184,73 @@ export default function Compras() {
         </div>
       </Card>
     </div>
+  );
+}
+
+function EditCompraForm({ compra, onSuccess }: { compra: Compra; onSuccess: () => void }) {
+  const updateMutation = useUpdateCompra();
+  const [formData, setFormData] = useState({
+    estado: compra.estado,
+    notas: compra.notas || "",
+    fechaVencimiento: compra.fechaVencimiento ? String(compra.fechaVencimiento).slice(0, 10) : "",
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateMutation.mutate(
+      {
+        id: compra.id,
+        data: {
+          estado: formData.estado as Compra["estado"],
+          notas: formData.notas || undefined,
+          fechaVencimiento: formData.fechaVencimiento || undefined,
+        },
+      },
+      { onSuccess }
+    );
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Estado</label>
+        <select
+          className={selectClass}
+          value={formData.estado}
+          onChange={(e) => setFormData({ ...formData, estado: e.target.value as Compra["estado"] })}
+        >
+          <option value="pendiente">Pendiente</option>
+          <option value="recibida">Recibida</option>
+          <option value="pagada">Pagada</option>
+          <option value="anulada">Anulada</option>
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Fecha de Vencimiento</label>
+        <Input
+          type="date"
+          value={formData.fechaVencimiento}
+          onChange={(e) => setFormData({ ...formData, fechaVencimiento: e.target.value })}
+          className="bg-background"
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Notas</label>
+        <Input
+          value={formData.notas}
+          onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
+          className="bg-background"
+        />
+      </div>
+      <div className="pt-4 flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onSuccess}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={updateMutation.isPending}>
+          {updateMutation.isPending ? "Guardando..." : "Guardar cambios"}
+        </Button>
+      </div>
+    </form>
   );
 }
 
@@ -133,10 +268,7 @@ function CreateCompraForm({ onSuccess }: { onSuccess: () => void }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.proveedorId) return;
-    createMutation.mutate(
-      { data: { ...formData } },
-      { onSuccess: () => onSuccess() }
-    );
+    createMutation.mutate({ data: { ...formData } }, { onSuccess });
   };
 
   const addItem = () =>
@@ -158,20 +290,23 @@ function CreateCompraForm({ onSuccess }: { onSuccess: () => void }) {
           <label className="text-sm font-medium">Proveedor *</label>
           <select
             required
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={selectClass}
             value={formData.proveedorId || ""}
             onChange={(e) => setFormData({ ...formData, proveedorId: Number(e.target.value) })}
           >
             <option value="">-- Seleccionar proveedor --</option>
             {safeProveedores.map((p) => (
-              <option key={p.id} value={p.id}>{p.nombre} ({p.tipoDocumento} {p.numeroDocumento})</option>
+              <option key={p.id} value={p.id}>
+                {p.nombre} ({p.tipoDocumento} {p.numeroDocumento})
+              </option>
             ))}
           </select>
         </div>
         <div className="space-y-2">
           <label className="text-sm font-medium">Fecha de la Orden *</label>
           <Input
-            type="date" required
+            type="date"
+            required
             value={formData.fecha}
             onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
             className="bg-background"
@@ -187,7 +322,6 @@ function CreateCompraForm({ onSuccess }: { onSuccess: () => void }) {
           />
         </div>
       </div>
-
       <div className="space-y-3 pt-2">
         <div className="flex justify-between items-center">
           <h4 className="font-semibold text-sm">Artículos</h4>
@@ -195,17 +329,12 @@ function CreateCompraForm({ onSuccess }: { onSuccess: () => void }) {
             <Plus className="w-3 h-3 mr-1" /> Añadir Artículo
           </Button>
         </div>
-        <div className="grid grid-cols-12 gap-1 text-xs text-muted-foreground px-2">
-          <span className="col-span-6">Descripción</span>
-          <span className="col-span-2 text-center">Cant.</span>
-          <span className="col-span-3 text-right">Precio Costo</span>
-          <span className="col-span-1" />
-        </div>
         {formData.items.map((item, index) => (
           <div key={index} className="grid grid-cols-12 gap-2 items-center bg-muted/20 p-2 rounded-md border border-border">
             <div className="col-span-6">
               <Input
-                placeholder="Descripción del artículo" required
+                placeholder="Descripción"
+                required
                 value={item.descripcion}
                 onChange={(e) => {
                   const newItems = [...formData.items];
@@ -217,7 +346,9 @@ function CreateCompraForm({ onSuccess }: { onSuccess: () => void }) {
             </div>
             <div className="col-span-2">
               <Input
-                type="number" placeholder="Cant" required min="1"
+                type="number"
+                required
+                min="1"
                 value={item.cantidad || ""}
                 onChange={(e) => {
                   const newItems = [...formData.items];
@@ -229,7 +360,9 @@ function CreateCompraForm({ onSuccess }: { onSuccess: () => void }) {
             </div>
             <div className="col-span-3">
               <Input
-                type="number" placeholder="Precio" required min="0"
+                type="number"
+                required
+                min="0"
                 value={item.precioUnitario || ""}
                 onChange={(e) => {
                   const newItems = [...formData.items];
@@ -240,27 +373,31 @@ function CreateCompraForm({ onSuccess }: { onSuccess: () => void }) {
               />
             </div>
             <div className="col-span-1 flex justify-center">
-              <button type="button" onClick={() => removeItem(index)}
-                className="text-muted-foreground hover:text-destructive transition-colors text-lg leading-none">×</button>
+              <button type="button" onClick={() => removeItem(index)} className="text-muted-foreground hover:text-destructive text-lg">
+                ×
+              </button>
             </div>
           </div>
         ))}
       </div>
-
       <div className="bg-muted/30 rounded-lg p-4 space-y-1 text-sm">
         <div className="flex justify-between text-muted-foreground">
-          <span>Subtotal</span><span>{formatCurrency(subtotal)}</span>
+          <span>Subtotal</span>
+          <span>{formatCurrency(subtotal)}</span>
         </div>
         <div className="flex justify-between text-muted-foreground">
-          <span>IVA 19%</span><span>{formatCurrency(iva)}</span>
+          <span>IVA 19%</span>
+          <span>{formatCurrency(iva)}</span>
         </div>
         <div className="flex justify-between font-bold text-base pt-1 border-t border-border">
-          <span>Total</span><span className="text-primary">{formatCurrency(total)}</span>
+          <span>Total</span>
+          <span className="text-primary">{formatCurrency(total)}</span>
         </div>
       </div>
-
       <div className="pt-2 flex justify-end gap-2 border-t border-border">
-        <Button type="button" variant="outline" onClick={onSuccess}>Cancelar</Button>
+        <Button type="button" variant="outline" onClick={onSuccess}>
+          Cancelar
+        </Button>
         <Button type="submit" disabled={createMutation.isPending || !formData.proveedorId}>
           {createMutation.isPending ? "Guardando..." : "Crear Orden"}
         </Button>

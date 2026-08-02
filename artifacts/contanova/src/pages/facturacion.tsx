@@ -1,22 +1,45 @@
 import { useState } from "react";
-import { useGetFacturasResumen, useListFacturas, useCreateFactura, useListClientes } from "@workspace/api-client-react";
+import {
+  useGetFacturasResumen,
+  useListFacturas,
+  useCreateFactura,
+  useUpdateFactura,
+  useDeleteFactura,
+  useListClientes,
+  type Factura,
+} from "@workspace/api-client-react";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, FileText, CheckCircle2, Clock, Ban } from "lucide-react";
+import { Plus, Search, FileText, CheckCircle2, Clock, Ban, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
+const selectClass =
+  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
 export default function Facturacion() {
   const [search, setSearch] = useState("");
-  const { data: resumen, isLoading: resumenLoading } = useGetFacturasResumen();
-  const { data: facturas, isLoading } = useListFacturas({ search });
+  const { data: resumen, isLoading: resumenLoading, refetch: refetchResumen } = useGetFacturasResumen();
+  const { data: facturas, isLoading, refetch } = useListFacturas({ search });
+  const deleteMutation = useDeleteFactura();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<Factura | null>(null);
 
   const safeFacturas = Array.isArray(facturas) ? facturas : [];
+  const invalidate = () => {
+    refetch();
+    refetchResumen();
+  };
+
+  const handleAnular = (f: Factura) => {
+    if (f.estado === "anulada") return;
+    if (!confirm(`¿Anular la factura ${f.numero}?`)) return;
+    deleteMutation.mutate({ id: f.id }, { onSuccess: () => invalidate() });
+  };
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-7xl mx-auto">
@@ -47,11 +70,33 @@ export default function Facturacion() {
               <DialogHeader>
                 <DialogTitle>Crear Factura de Venta</DialogTitle>
               </DialogHeader>
-              <CreateFacturaForm onSuccess={() => setIsCreateOpen(false)} />
+              <CreateFacturaForm
+                onSuccess={() => {
+                  setIsCreateOpen(false);
+                  invalidate();
+                }}
+              />
             </DialogContent>
           </Dialog>
         </div>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="sm:max-w-[425px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>Editar Factura {editing?.numero}</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <EditFacturaForm
+              factura={editing}
+              onSuccess={() => {
+                setEditing(null);
+                invalidate();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-card border-border shadow-sm">
@@ -124,6 +169,7 @@ export default function Facturacion() {
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-right">Saldo Pendiente</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -137,11 +183,12 @@ export default function Facturacion() {
                     <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
                     <TableCell className="text-right"><Skeleton className="h-4 w-[80px] ml-auto" /></TableCell>
+                    <TableCell />
                   </TableRow>
                 ))
               ) : safeFacturas.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                     No se encontraron facturas.
                   </TableCell>
                 </TableRow>
@@ -170,6 +217,28 @@ export default function Facturacion() {
                         ? formatCurrency(factura.saldoPendiente)
                         : "-"}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          disabled={factura.estado === "anulada"}
+                          onClick={() => setEditing(factura)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          disabled={factura.estado === "anulada" || deleteMutation.isPending}
+                          onClick={() => handleAnular(factura)}
+                          title="Anular"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -178,6 +247,73 @@ export default function Facturacion() {
         </div>
       </Card>
     </div>
+  );
+}
+
+function EditFacturaForm({ factura, onSuccess }: { factura: Factura; onSuccess: () => void }) {
+  const updateMutation = useUpdateFactura();
+  const [formData, setFormData] = useState({
+    estado: factura.estado,
+    notas: factura.notas || "",
+    fechaVencimiento: String(factura.fechaVencimiento).slice(0, 10),
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateMutation.mutate(
+      {
+        id: factura.id,
+        data: {
+          estado: formData.estado as Factura["estado"],
+          notas: formData.notas || undefined,
+          fechaVencimiento: formData.fechaVencimiento,
+        },
+      },
+      { onSuccess }
+    );
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Estado</label>
+        <select
+          className={selectClass}
+          value={formData.estado}
+          onChange={(e) => setFormData({ ...formData, estado: e.target.value as Factura["estado"] })}
+        >
+          <option value="borrador">Borrador</option>
+          <option value="emitida">Emitida</option>
+          <option value="pagada">Pagada</option>
+          <option value="anulada">Anulada</option>
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Fecha de Vencimiento</label>
+        <Input
+          type="date"
+          value={formData.fechaVencimiento}
+          onChange={(e) => setFormData({ ...formData, fechaVencimiento: e.target.value })}
+          className="bg-background"
+        />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Notas</label>
+        <Input
+          value={formData.notas}
+          onChange={(e) => setFormData({ ...formData, notas: e.target.value })}
+          className="bg-background"
+        />
+      </div>
+      <div className="pt-4 flex justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onSuccess}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={updateMutation.isPending}>
+          {updateMutation.isPending ? "Guardando..." : "Guardar cambios"}
+        </Button>
+      </div>
+    </form>
   );
 }
 

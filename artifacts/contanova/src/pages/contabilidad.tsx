@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { useListCuentas, useListMovimientos, useCreateCuenta, useCreateMovimiento } from "@workspace/api-client-react";
+import {
+  useListCuentas,
+  useListMovimientos,
+  useCreateCuenta,
+  useUpdateCuenta,
+  useDeleteCuenta,
+  useCreateMovimiento,
+  useDeleteMovimiento,
+  type CuentaContable,
+} from "@workspace/api-client-react";
 import { formatCurrency } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, FolderTree, Activity } from "lucide-react";
+import { Plus, FolderTree, Activity, Pencil, Trash2 } from "lucide-react";
 
 const TIPO_COLORS: Record<string, string> = {
   activo: "bg-blue-500/10 text-blue-500",
@@ -26,6 +35,9 @@ const TIPO_LABEL: Record<string, string> = {
   ingreso: "Ingreso",
   egreso: "Egreso",
 };
+
+const selectClass =
+  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export default function Contabilidad() {
   const [tab, setTab] = useState("cuentas");
@@ -60,10 +72,18 @@ export default function Contabilidad() {
 }
 
 function CuentasList() {
-  const { data, isLoading } = useListCuentas({});
+  const { data, isLoading, refetch } = useListCuentas({});
+  const deleteMutation = useDeleteCuenta();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<CuentaContable | null>(null);
 
   const safeData = Array.isArray(data) ? data : [];
+
+  const handleDelete = (c: CuentaContable) => {
+    if (!confirm(`¿Desactivar la cuenta "${c.codigo} - ${c.nombre}"?`)) return;
+    deleteMutation.mutate({ id: c.id }, { onSuccess: () => refetch() });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -82,10 +102,33 @@ function CuentasList() {
             <DialogHeader>
               <DialogTitle>Crear Cuenta Contable</DialogTitle>
             </DialogHeader>
-            <CreateCuentaForm onSuccess={() => setIsCreateOpen(false)} />
+            <CuentaForm
+              onSuccess={() => {
+                setIsCreateOpen(false);
+                refetch();
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="sm:max-w-[425px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>Editar Cuenta Contable</DialogTitle>
+          </DialogHeader>
+          {editing && (
+            <CuentaForm
+              cuenta={editing}
+              onSuccess={() => {
+                setEditing(null);
+                refetch();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Card className="border-border shadow-sm overflow-hidden bg-card">
         <div className="overflow-x-auto">
           <Table>
@@ -95,13 +138,14 @@ function CuentasList() {
                 <TableHead>Nombre de la Cuenta</TableHead>
                 <TableHead>Naturaleza</TableHead>
                 <TableHead className="text-right">Saldo Actual</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={4} className="text-center h-24"><Skeleton className="w-full h-8" /></TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center h-24"><Skeleton className="w-full h-8" /></TableCell></TableRow>
               ) : safeData.length === 0 ? (
-                <TableRow><TableCell colSpan={4} className="text-center h-24 text-muted-foreground">No hay cuentas creadas.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No hay cuentas creadas.</TableCell></TableRow>
               ) : (
                 safeData.map((c) => (
                   <TableRow key={c.id} className="border-border hover:bg-muted/30">
@@ -115,6 +159,23 @@ function CuentasList() {
                     <TableCell className="text-right font-semibold">
                       {c.saldo !== null && c.saldo !== undefined ? formatCurrency(c.saldo) : "$ 0"}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => setEditing(c)} title="Editar">
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(c)}
+                          disabled={deleteMutation.isPending}
+                          title="Desactivar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -126,31 +187,59 @@ function CuentasList() {
   );
 }
 
-function CreateCuentaForm({ onSuccess }: { onSuccess: () => void }) {
+function CuentaForm({ cuenta, onSuccess }: { cuenta?: CuentaContable; onSuccess: () => void }) {
   const createMutation = useCreateCuenta();
-  const [formData, setFormData] = useState({ codigo: "", nombre: "", tipo: "activo" as const });
+  const updateMutation = useUpdateCuenta();
+  const isEdit = !!cuenta;
+  const [formData, setFormData] = useState({
+    codigo: cuenta?.codigo || "",
+    nombre: cuenta?.nombre || "",
+    tipo: (cuenta?.tipo || "activo") as CuentaContable["tipo"],
+    activo: cuenta?.activo ?? true,
+  });
+  const pending = createMutation.isPending || updateMutation.isPending;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate({ data: formData }, { onSuccess: () => onSuccess() });
+    if (isEdit && cuenta) {
+      updateMutation.mutate(
+        { id: cuenta.id, data: formData },
+        { onSuccess: () => onSuccess() }
+      );
+    } else {
+      const { activo: _activo, ...createData } = formData;
+      createMutation.mutate({ data: createData }, { onSuccess: () => onSuccess() });
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
       <div className="space-y-2">
         <label className="text-sm font-medium">Código Contable *</label>
-        <Input required value={formData.codigo} onChange={(e) => setFormData({ ...formData, codigo: e.target.value })} placeholder="Ej: 110505" className="bg-background" />
+        <Input
+          required
+          value={formData.codigo}
+          onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
+          placeholder="Ej: 110505"
+          className="bg-background"
+        />
       </div>
       <div className="space-y-2">
         <label className="text-sm font-medium">Nombre de la Cuenta *</label>
-        <Input required value={formData.nombre} onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} placeholder="Ej: Caja General" className="bg-background" />
+        <Input
+          required
+          value={formData.nombre}
+          onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+          placeholder="Ej: Caja General"
+          className="bg-background"
+        />
       </div>
       <div className="space-y-2">
         <label className="text-sm font-medium">Naturaleza / Tipo *</label>
         <select
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={selectClass}
           value={formData.tipo}
-          onChange={(e) => setFormData({ ...formData, tipo: e.target.value as any })}
+          onChange={(e) => setFormData({ ...formData, tipo: e.target.value as CuentaContable["tipo"] })}
         >
           <option value="activo">Activo</option>
           <option value="pasivo">Pasivo</option>
@@ -159,10 +248,23 @@ function CreateCuentaForm({ onSuccess }: { onSuccess: () => void }) {
           <option value="egreso">Egreso</option>
         </select>
       </div>
+      {isEdit && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Estado</label>
+          <select
+            className={selectClass}
+            value={formData.activo ? "true" : "false"}
+            onChange={(e) => setFormData({ ...formData, activo: e.target.value === "true" })}
+          >
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+          </select>
+        </div>
+      )}
       <div className="pt-4 flex justify-end gap-2">
         <Button type="button" variant="outline" onClick={onSuccess}>Cancelar</Button>
-        <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending ? "Guardando..." : "Crear Cuenta"}
+        <Button type="submit" disabled={pending}>
+          {pending ? "Guardando..." : isEdit ? "Guardar Cambios" : "Crear Cuenta"}
         </Button>
       </div>
     </form>
@@ -170,9 +272,15 @@ function CreateCuentaForm({ onSuccess }: { onSuccess: () => void }) {
 }
 
 function AsientosDiarioList() {
-  const { data, isLoading } = useListMovimientos({});
+  const { data, isLoading, refetch } = useListMovimientos({});
+  const deleteMutation = useDeleteMovimiento();
   const safeData = Array.isArray(data) ? data : [];
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  const handleDelete = (id: number, numero: string) => {
+    if (!confirm(`¿Eliminar el comprobante ${numero}?`)) return;
+    deleteMutation.mutate({ id }, { onSuccess: () => refetch() });
+  };
 
   return (
     <div className="space-y-4">
@@ -192,7 +300,12 @@ function AsientosDiarioList() {
             <DialogHeader>
               <DialogTitle>Crear Comprobante Contable</DialogTitle>
             </DialogHeader>
-            <CreateMovimientoForm onSuccess={() => setIsCreateOpen(false)} />
+            <CreateMovimientoForm
+              onSuccess={() => {
+                setIsCreateOpen(false);
+                refetch();
+              }}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -208,13 +321,14 @@ function AsientosDiarioList() {
                 <TableHead>Tipo</TableHead>
                 <TableHead className="text-right">Débito</TableHead>
                 <TableHead className="text-right">Crédito</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={6} className="text-center h-24"><Skeleton className="w-full h-8" /></TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center h-24"><Skeleton className="w-full h-8" /></TableCell></TableRow>
               ) : safeData.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center h-24 text-muted-foreground">No hay comprobantes registrados.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No hay comprobantes registrados.</TableCell></TableRow>
               ) : (
                 safeData.map((m) => (
                   <TableRow key={m.id} className="border-border hover:bg-muted/30">
@@ -224,6 +338,18 @@ function AsientosDiarioList() {
                     <TableCell><Badge variant="outline" className="text-xs">{m.tipo}</Badge></TableCell>
                     <TableCell className="text-right text-green-600">{formatCurrency(m.totalDebito)}</TableCell>
                     <TableCell className="text-right text-orange-500">{formatCurrency(m.totalCredito)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(m.id, m.numero)}
+                        disabled={deleteMutation.isPending}
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -282,7 +408,7 @@ function CreateMovimientoForm({ onSuccess }: { onSuccess: () => void }) {
         <div className="space-y-2">
           <label className="text-sm font-medium">Tipo de Comprobante *</label>
           <select
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={selectClass}
             value={formData.tipo}
             onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
           >
