@@ -1,5 +1,7 @@
-import { BufferJSON, initAuthCreds, proto } from "@whiskeysockets/baileys";
+import baileys from "@whiskeysockets/baileys";
 import { q } from "./db.js";
+
+const { BufferJSON, initAuthCreds, proto } = baileys;
 
 /**
  * Baileys auth state persisted in Postgres (survives Render/Railway restarts).
